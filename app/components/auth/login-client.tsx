@@ -1,5 +1,6 @@
 "use client";
 
+import { useRouter } from "next/navigation";
 import { FieldValues, SubmitHandler, useForm } from "react-hook-form";
 import AuthContainer from "../containers/authcontainer";
 import Button from "../general/button";
@@ -7,14 +8,15 @@ import Heading from "../general/heading";
 import Input from "../general/input";
 
 const LoginClient = () => {
+  const router = useRouter();
   const {
     register,
     handleSubmit,
-    watch,
     formState: { errors },
   } = useForm<FieldValues>();
   const onSubmit: SubmitHandler<FieldValues> = (data) => {
     console.log(data);
+    router.push("/yonetici");
   };
   return (
     <AuthContainer>
