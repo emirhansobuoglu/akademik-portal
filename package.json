@@ -10,6 +10,8 @@
   },
   "dependencies": {
     "akademik-portal": "file:",
+    "express": "^5.1.0",
+    "mongoose": "^8.13.2",
     "next": "15.2.5",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
@@ -19,6 +21,7 @@
   "devDependencies": {
     "@eslint/eslintrc": "^3",
     "@tailwindcss/postcss": "^4",
+    "@types/express": "^5.0.1",
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
