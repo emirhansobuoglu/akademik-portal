@@ -15,22 +15,27 @@ interface Ilan {
 
 const AdayIlanlarPage = () => {
   const [ilanlar, setIlanlar] = useState<Ilan[]>([]);
-  const [basvuranAd, setBasvuranAd] = useState(""); // Başvuranın ismi
   const [selectedIlan, setSelectedIlan] = useState<Ilan | null>(null); // Seçilen ilan
   const [files, setFiles] = useState<Map<number, File | null>>(new Map()); // Yüklenen dosyalar
 
   useEffect(() => {
     const fetchIlanlar = async () => {
-      const res = await fetch("http://localhost:5000/backend-api/ilanlar");
-      const data = await res.json();
-      setIlanlar(data);
+      try {
+        const res = await fetch("http://localhost:5000/backend-api/ilanlar");
+        const data = await res.json();
+        setIlanlar(data);
+      } catch (error) {
+        console.error("İlanlar getirilemedi", error);
+      }
     };
     fetchIlanlar();
   }, []);
 
   const handleBasvur = async (ilanId: string) => {
-    if (!basvuranAd.trim()) {
-      alert("Lütfen adınızı girin!");
+    const basvuranAd = localStorage.getItem("name");
+
+    if (!basvuranAd) {
+      alert("Giriş bilgisi bulunamadı. Lütfen tekrar giriş yapın!");
       return;
     }
 
@@ -39,31 +44,29 @@ const AdayIlanlarPage = () => {
       return;
     }
 
-    // Dosyaları FormData'ya ekle
     const formData = new FormData();
     formData.append("adayAd", basvuranAd);
     formData.append("ilanId", ilanId);
     formData.append("durum", "Beklemede");
 
-    // Belgeleri FormData'ya ekle
-    if (files) {
-      selectedIlan.belgeler.forEach((belge, index) => {
-        const file = files.get(index);
-        if (file) {
-          formData.append("belgeler", file, file.name);
-        }
-      });
-    }
+    selectedIlan.belgeler.forEach((belge, index) => {
+      const file = files.get(index);
+      if (file) {
+        formData.append("belgeler", file, file.name);
+      }
+    });
 
     try {
       const res = await fetch("http://localhost:5000/backend-api/basvurular", {
         method: "POST",
         body: formData,
       });
+
       if (res.ok) {
         alert("✅ Başvurunuz başarıyla yapıldı!");
       } else {
-        alert("❌ Başvuru başarısız oldu.");
+        const data = await res.json();
+        alert(`❌ Başvuru başarısız oldu: ${data.error || "Bilinmeyen hata"}`);
       }
     } catch (error) {
       console.error("Başvuru hatası:", error);
@@ -71,8 +74,9 @@ const AdayIlanlarPage = () => {
     }
   };
 
+
   const handleIlanSec = (ilan: Ilan) => {
-    setSelectedIlan(ilan); // Seçilen ilanı kaydediyoruz
+    setSelectedIlan(ilan);
   };
 
   const handleFileChange = (index: number, event: React.ChangeEvent<HTMLInputElement>) => {
@@ -86,17 +90,6 @@ const AdayIlanlarPage = () => {
   return (
     <div className="p-8">
       <h1 className="text-2xl font-bold mb-6">Açık İlanlar</h1>
-
-      {/* Başvuran adı */}
-      <div className="mb-6">
-        <input
-          type="text"
-          value={basvuranAd}
-          onChange={(e) => setBasvuranAd(e.target.value)}
-          placeholder="Adınızı yazın"
-          className="border p-2 w-full"
-        />
-      </div>
 
       <table className="w-full border border-gray-300 text-sm">
         <thead className="bg-gray-100 text-left">
@@ -138,15 +131,17 @@ const AdayIlanlarPage = () => {
         </tbody>
       </table>
 
-      {/* Seçilen ilan bilgileri */}
+      {/* Seçilen ilan bilgileri ve başvuru alanı */}
       {selectedIlan && (
         <div className="mt-8 p-4 border border-gray-300 rounded">
           <h3 className="font-semibold mb-4">Başvurmak İstediğiniz İlan</h3>
-          <div>
+
+          <div className="mb-4">
             <h4 className="font-semibold">Başlık:</h4>
             <p>{selectedIlan.baslik}</p>
           </div>
-          <div>
+
+          <div className="mb-4">
             <h4 className="font-semibold">Belgeler:</h4>
             <ul className="list-disc ml-4">
               {selectedIlan.belgeler.map((belge, i) => (
@@ -161,7 +156,8 @@ const AdayIlanlarPage = () => {
               ))}
             </ul>
           </div>
-          <div>
+
+          <div className="mb-4">
             <h4 className="font-semibold">Başvuru Koşulları:</h4>
             <p>{selectedIlan.kosullar}</p>
           </div>
@@ -170,7 +166,7 @@ const AdayIlanlarPage = () => {
             onClick={() => handleBasvur(selectedIlan._id)}
             className="bg-blue-600 text-white px-6 py-2 rounded mt-4"
           >
-            Başvur
+            Başvuruyu Gönder
           </button>
         </div>
       )}

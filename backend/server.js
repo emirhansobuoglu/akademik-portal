@@ -1,8 +1,10 @@
+// server.js
 import cors from "cors";
 import dotenv from "dotenv";
 import express from "express";
 import mongoose from "mongoose";
 
+import authRoutes from "./routes/authRoutes.js";
 import basvuruRoutes from "./routes/basvuruRoutes.js";
 import ilanRoutes from "./routes/ilanRoutes.js";
 
@@ -22,10 +24,11 @@ mongoose.connect(process.env.MONGO_URI)
   .catch((err) => console.error("❌ MongoDB bağlantı hatası:", err));
 
 // Ana Routes
-app.use("/backend-api/ilanlar", ilanRoutes);
+app.use("/backend-api/auth", authRoutes);
 app.use("/backend-api/basvurular", basvuruRoutes);
+app.use("/backend-api/ilanlar", ilanRoutes);
 
-// Test root
+// Test route
 app.get("/", (req, res) => {
   res.send("Backend çalışıyor !");
 });

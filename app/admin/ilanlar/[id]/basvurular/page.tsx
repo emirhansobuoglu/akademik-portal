@@ -18,7 +18,7 @@ const BasvurularPage = () => {
     const fetchBasvurular = async () => {
       if (!id) return;
       try {
-        const res = await fetch(`http://localhost:5000/backend-api/ilanlar/${id}/basvurular`);
+        const res = await fetch(`http://localhost:5000/backend-api/basvurular/ilan/${id}/basvurular`);
         const data = await res.json();
         setBasvurular(data);
       } catch (error) {
