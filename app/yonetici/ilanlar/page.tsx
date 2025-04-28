@@ -1,4 +1,5 @@
 "use client";
+import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import YoneticiPage from "../page";
 
@@ -36,6 +37,8 @@ const IlanlarPage = () => {
     ];
     setIlanlar(dummyIlanlar);
   }, []);
+  const router = useRouter();
+
   return (
     <YoneticiPage>
       <div>
@@ -64,7 +67,12 @@ const IlanlarPage = () => {
               return (
                 <tr key={ilan.id} className="border-t">
                   <td className="p-2">
-                    <button className="cursor-pointer bg-amber-300 rounded px-2">
+                    <button
+                      onClick={() =>
+                        router.push(`/yonetici/ilanlar/${ilan.id}`)
+                      }
+                      className="cursor-pointer bg-amber-300 rounded px-2"
+                    >
                       {index + 1}
                     </button>
                   </td>

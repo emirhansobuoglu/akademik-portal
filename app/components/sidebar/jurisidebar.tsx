@@ -2,19 +2,19 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { AiOutlineFileText } from "react-icons/ai"; // İkon
+import { AiOutlineFileSearch } from "react-icons/ai"; // React Icons
 
-const YonetSidebar = () => {
+const JuriSidebar = () => {
   const pathname = usePathname();
 
   const links = [
-    { name: "İlanlar", path: "/yonetici/ilanlar", icon: AiOutlineFileText },
+    { name: "İlanlarım", path: "/juri", icon: AiOutlineFileSearch },
   ];
 
   return (
     <aside className="h-screen w-64 bg-gray-900 text-white p-4 flex flex-col justify-between sticky top-0 rounded-bl-lg rounded-br-lg">
       <div>
-        <h2 className="text-2xl font-bold mb-6">Yönetici Paneli</h2>
+        <h2 className="text-2xl font-bold mb-6">Jüri Üyesi Paneli</h2>
 
         <nav className="space-y-2">
           {links.map((link) => {
@@ -41,7 +41,7 @@ const YonetSidebar = () => {
         <div className="text-sm font-semibold mb-2">Emirhan</div>
 
         <button
-          onClick={() => console.log("Çıkış yapılacak")}
+          onClick={() => console.log("Jüri Çıkış Yap")}
           className="w-full text-left cursor-pointer bg-red-600 hover:bg-red-700 transition-all duration-300 text-white py-2 px-3 rounded text-sm"
         >
           Çıkış Yap
@@ -51,4 +51,4 @@ const YonetSidebar = () => {
   );
 };
 
-export default YonetSidebar;
+export default JuriSidebar;
