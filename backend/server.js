@@ -1,29 +1,36 @@
+import cors from "cors";
 import dotenv from "dotenv";
 import express from "express";
 import mongoose from "mongoose";
+
+import basvuruRoutes from "./routes/basvuruRoutes.js";
+import ilanRoutes from "./routes/ilanRoutes.js";
 
 dotenv.config();
 
 const app = express();
 const PORT = process.env.PORT || 5000;
 
-// Middlewares
+// Middleware
+app.use(cors());
 app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 
 // MongoDB bağlantısı
-mongoose
-  .connect(process.env.MONGO_URI, {
-    useNewUrlParser: true,
-    useUnifiedTopology: true,
-  })
+mongoose.connect(process.env.MONGO_URI)
   .then(() => console.log("✅ MongoDB bağlantısı başarılı"))
   .catch((err) => console.error("❌ MongoDB bağlantı hatası:", err));
 
-// Basit bir test route'u
+// Ana Routes
+app.use("/backend-api/ilanlar", ilanRoutes);
+app.use("/backend-api/basvurular", basvuruRoutes);
+
+// Test root
 app.get("/", (req, res) => {
   res.send("Backend çalışıyor !");
 });
 
+// Sunucu Başlat
 app.listen(PORT, () => {
   console.log(`🚀 Sunucu ${PORT} portunda çalışıyor`);
 });

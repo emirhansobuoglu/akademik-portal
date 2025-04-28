@@ -3,129 +3,149 @@
 import { useParams } from "next/navigation";
 import { useEffect, useState } from "react";
 
-const GEREKLI_BELGELER_LISTESI = [
-  "Diploma",
-  "Yabancı Dil Belgesi",
-  "Kimlik Fotokopisi",
-  "Yayın Listesi",
-  "Özgeçmiş",
-];
+// Tipler
+interface Ilan {
+  _id: string;
+  baslik: string;
+  kadro: string;
+  baslangic: string;
+  bitis: string;
+  belgeler: string[];
+  kosullar: string;
+}
 
 const IlanDuzenlePage = () => {
-  const params = useParams();
-  const ilanId = params?.id;
-
-  const [baslik, setBaslik] = useState("");
-  const [kadro, setKadro] = useState("");
-  const [baslangic, setBaslangic] = useState("");
-  const [bitis, setBitis] = useState("");
-  const [belgeler, setBelgeler] = useState<string[]>([]);
-  const [kosullar, setKosullar] = useState("");
+  const { id } = useParams();
+  const [form, setForm] = useState<Omit<Ilan, "_id">>({
+    baslik: "",
+    kadro: "",
+    baslangic: "",
+    bitis: "",
+    belgeler: [""],
+    kosullar: "",
+  });
 
   useEffect(() => {
-    // Simülasyon: API'den ilan bilgisi çekiliyormuş gibi
-    const dummy = {
-      baslik: "Bilgisayar Mühendisliği - Dr. Öğr. Üyesi",
-      kadro: "Dr. Öğr. Üyesi",
-      baslangic: "2025-04-01",
-      bitis: "2025-04-30",
-      belgeler: ["Diploma", "Yabancı Dil Belgesi"],
-      kosullar: "Aday en az 2 A1 yayın sunmalıdır.",
+    const fetchIlan = async () => {
+      if (!id) return;
+      try {
+        const res = await fetch(`http://localhost:5000/backend-api/ilanlar/${id}`);
+        const data = await res.json();
+        setForm({
+          baslik: data.baslik,
+          kadro: data.kadro,
+          baslangic: data.baslangic?.slice(0, 10),
+          bitis: data.bitis?.slice(0, 10),
+          belgeler: data.belgeler || [""],
+          kosullar: data.kosullar || "",
+        });
+      } catch (error) {
+        console.error("İlan verisi çekilemedi", error);
+      }
     };
 
-    // Formu doldur
-    setBaslik(dummy.baslik);
-    setKadro(dummy.kadro);
-    setBaslangic(dummy.baslangic);
-    setBitis(dummy.bitis);
-    setBelgeler(dummy.belgeler);
-    setKosullar(dummy.kosullar);
-  }, [ilanId]);
+    fetchIlan();
+  }, [id]);
 
-  const toggleBelge = (belge: string) => {
-    if (belgeler.includes(belge)) {
-      setBelgeler(belgeler.filter((b) => b !== belge));
-    } else {
-      setBelgeler([...belgeler, belge]);
+  const handleGuncelle = async () => {
+    try {
+      const res = await fetch(`http://localhost:5000/backend-api/ilanlar/${id}`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(form),
+      });
+      if (res.ok) {
+        alert("✅ İlan başarıyla güncellendi!");
+      } else {
+        alert("❌ Güncelleme başarısız!");
+      }
+    } catch (error) {
+      console.error("Güncelleme hatası", error);
     }
   };
 
-  const handleKaydet = () => {
-    // Burada API isteği gönderilecek (PUT / PATCH)
-    const duzenlenmisIlan = {
-      baslik,
-      kadro,
-      baslangic,
-      bitis,
-      belgeler,
-      kosullar,
-    };
-    console.log("Kaydedilen İlan:", duzenlenmisIlan);
-    alert("İlan başarıyla güncellendi!");
+  const belgeEkle = () => {
+    setForm({ ...form, belgeler: [...form.belgeler, ""] });
+  };
+
+  const belgeDegistir = (index: number, value: string) => {
+    const yeniBelgeler = [...form.belgeler];
+    yeniBelgeler[index] = value;
+    setForm({ ...form, belgeler: yeniBelgeler });
   };
 
   return (
-    <div className="max-w-2xl mx-auto bg-white shadow-md p-6 rounded">
-      <h1 className="text-2xl font-bold mb-4">İlan Düzenle (ID: {ilanId})</h1>
+    <div className="p-8">
+      <h1 className="text-2xl font-bold mb-6">İlanı Düzenle</h1>
 
-      <div className="space-y-3">
+      <div className="space-y-4">
         <input
           type="text"
-          value={baslik}
-          onChange={(e) => setBaslik(e.target.value)}
+          value={form.baslik}
+          onChange={(e) => setForm({ ...form, baslik: e.target.value })}
           placeholder="İlan Başlığı"
-          className="w-full border p-2"
+          className="border p-2 w-full"
         />
+
         <input
           type="text"
-          value={kadro}
-          onChange={(e) => setKadro(e.target.value)}
-          placeholder="Kadro (ör: Doçent)"
-          className="w-full border p-2"
+          value={form.kadro}
+          onChange={(e) => setForm({ ...form, kadro: e.target.value })}
+          placeholder="Kadro"
+          className="border p-2 w-full"
         />
-        <div className="flex gap-2">
+
+        <div className="flex gap-4">
           <input
             type="date"
-            value={baslangic}
-            onChange={(e) => setBaslangic(e.target.value)}
-            className="w-full border p-2"
+            value={form.baslangic}
+            onChange={(e) => setForm({ ...form, baslangic: e.target.value })}
+            className="border p-2 w-full"
           />
+
           <input
             type="date"
-            value={bitis}
-            onChange={(e) => setBitis(e.target.value)}
-            className="w-full border p-2"
+            value={form.bitis}
+            onChange={(e) => setForm({ ...form, bitis: e.target.value })}
+            className="border p-2 w-full"
           />
         </div>
 
-        <div>
-          <p className="font-semibold mb-2">Gerekli Belgeler:</p>
-          <div className="flex flex-wrap gap-2">
-            {GEREKLI_BELGELER_LISTESI.map((belge) => (
-              <label key={belge} className="flex items-center gap-1">
-                <input
-                  type="checkbox"
-                  checked={belgeler.includes(belge)}
-                  onChange={() => toggleBelge(belge)}
-                />
-                {belge}
-              </label>
-            ))}
-          </div>
+        <div className="space-y-2">
+          <h2 className="font-semibold">Gerekli Belgeler</h2>
+          {form.belgeler.map((belge, index) => (
+            <input
+              key={index}
+              type="text"
+              value={belge}
+              onChange={(e) => belgeDegistir(index, e.target.value)}
+              placeholder={`Belge ${index + 1}`}
+              className="border p-2 w-full"
+            />
+          ))}
+          <button
+            onClick={belgeEkle}
+            className="bg-green-600 text-white px-4 py-2 rounded"
+          >
+            ➕ Belge Ekle
+          </button>
         </div>
 
-        <div>
-          <p className="font-semibold mb-2">Başvuru Koşulları:</p>
+        <div className="space-y-2">
+          <h2 className="font-semibold">Başvuru Koşulları</h2>
           <textarea
-            value={kosullar}
-            onChange={(e) => setKosullar(e.target.value)}
-            className="w-full border p-2 min-h-[100px]"
-          />
+            value={form.kosullar}
+            onChange={(e) => setForm({ ...form, kosullar: e.target.value })}
+            placeholder="Başvuru koşullarını buraya yazın"
+            className="border p-2 w-full h-24"
+          ></textarea>
         </div>
 
         <button
-          onClick={handleKaydet}
-          className="bg-blue-600 text-white px-4 py-2 rounded mt-2"
+          onClick={handleGuncelle}
+          className="bg-blue-600 text-white px-6 py-2 rounded"
         >
           Kaydet
         </button>
