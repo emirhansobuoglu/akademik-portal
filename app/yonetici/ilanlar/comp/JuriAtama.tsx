@@ -1,28 +1,83 @@
 "use client";
 
 import JuriKayitModal from "@/app/components/modal/JuriKayit";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
-const JuriAtama = () => {
+interface JuriAtamaProps {
+  ilanId: string;
+}
+
+interface Juri {
+  _id: string;
+  adSoyad: string;
+  tcNo: string;
+}
+
+const JuriAtama: React.FC<JuriAtamaProps> = ({ ilanId }) => {
   const [tcNo, setTcNo] = useState("");
-  const [juriler, setJuriler] = useState<string[]>([]);
+  const [juriler, setJuriler] = useState<Juri[]>([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [girilenTcNo, setGirilenTcNo] = useState("");
 
-  const handleAddJuri = () => {
+  useEffect(() => {
+    const fetchJuriler = async () => {
+      try {
+        const res = await fetch(
+          `http://localhost:5000/backend-api/juriler?ilanId=${ilanId}`
+        );
+        const data = await res.json();
+        setJuriler(data);
+      } catch (error) {
+        console.error("Jüri listesi yüklenemedi:", error);
+      }
+    };
+
+    fetchJuriler();
+  }, [ilanId]);
+
+  const handleAddJuri = async () => {
     if (tcNo.length !== 11) {
       alert("Geçerli bir TC Kimlik Numarası giriniz.");
       return;
     }
 
-    if (tcNo === "12345678901") {
-      if (!juriler.includes(tcNo)) {
-        setJuriler([...juriler, tcNo]);
-        setTcNo("");
+    try {
+      const res = await fetch(
+        `http://localhost:5000/backend-api/auth/user?tckn=${tcNo}`
+      );
+      if (res.ok) {
+        const user = await res.json();
+
+        // Kullanıcı varsa direkt veritabanına juri kaydı yap
+        const juriKayit = await fetch(
+          "http://localhost:5000/backend-api/juriler",
+          {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              ilanId,
+              adSoyad: user.name,
+              tcNo: user.tckn,
+            }),
+          }
+        );
+
+        if (juriKayit.ok) {
+          const yeniJuri = await juriKayit.json();
+          setJuriler((prev) => [...prev, yeniJuri]);
+          setTcNo("");
+        } else {
+          alert("Jüri kaydedilemedi.");
+        }
+      } else if (res.status === 404) {
+        setGirilenTcNo(tcNo);
+        setIsModalOpen(true);
       } else {
-        alert("Bu jüri zaten ekli.");
+        alert("Bir hata oluştu.");
       }
-    } else {
-      setIsModalOpen(true);
+    } catch (error) {
+      console.error("Jüri ekleme hatası:", error);
+      alert("Sunucu hatası oluştu.");
     }
   };
 
@@ -31,9 +86,60 @@ const JuriAtama = () => {
     setTcNo("");
   };
 
+  const handleJuriCreated = async (user: { adSoyad: string; tcNo: string }) => {
+    try {
+      const juriKayit = await fetch(
+        "http://localhost:5000/backend-api/juriler",
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            ilanId,
+            adSoyad: user.adSoyad,
+            tcNo: user.tcNo,
+          }),
+        }
+      );
+
+      if (juriKayit.ok) {
+        const yeniJuri = await juriKayit.json();
+        setJuriler((prev) => [...prev, yeniJuri]);
+      } else {
+        alert("Jüri kaydedilemedi!");
+      }
+    } catch (error) {
+      console.error("Modal jüri kayıt hatası:", error);
+    }
+
+    setIsModalOpen(false);
+    setTcNo("");
+  };
+
+  const handleJuriSil = async (juriId: string) => {
+    const onay = window.confirm("Bu jüriyi kaldırmak istiyor musun?");
+    if (!onay) return;
+
+    try {
+      const res = await fetch("http://localhost:5000/backend-api/juriler", {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ juriId }),
+      });
+
+      if (res.ok) {
+        setJuriler((prev) => prev.filter((j) => j._id !== juriId));
+      } else {
+        alert("Jüri silinemedi!");
+      }
+    } catch (error) {
+      console.error("Jüri silme hatası:", error);
+    }
+  };
+
   return (
     <div className="bg-white shadow p-6 rounded-lg space-y-4 mb-8">
       <h2 className="text-2xl font-bold mb-4">Jüri Atama</h2>
+      {ilanId}
 
       <div className="flex items-center gap-4 mb-4">
         <input
@@ -58,19 +164,36 @@ const JuriAtama = () => {
         ) : (
           juriler.map((juri, index) => (
             <div
-              key={index}
+              key={juri._id}
               className="p-2 border rounded flex justify-between items-center"
             >
-              <span>{juri}</span>
-              <span className="text-xs text-gray-400">
-                Jüri Üyesi {index + 1}
-              </span>
+              <div>
+                <span className="font-medium">{juri.adSoyad}</span> -{" "}
+                {juri.tcNo}
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="text-xs text-gray-400">
+                  Jüri Üyesi {index + 1}
+                </span>
+                <button
+                  onClick={() => handleJuriSil(juri._id)}
+                  className="text-red-600 text-xs hover:underline"
+                >
+                  Kaldır
+                </button>
+              </div>
             </div>
           ))
         )}
       </div>
 
-      <JuriKayitModal isOpen={isModalOpen} onClose={handleModalClose} />
+      {/* Modal çağırımı */}
+      <JuriKayitModal
+        isOpen={isModalOpen}
+        onClose={handleModalClose}
+        tcNo={girilenTcNo}
+        onJuriCreated={handleJuriCreated}
+      />
     </div>
   );
 };

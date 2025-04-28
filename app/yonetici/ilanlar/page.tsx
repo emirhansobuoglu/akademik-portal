@@ -1,98 +1,68 @@
 "use client";
-import { useRouter } from "next/navigation";
+
+import Link from "next/link";
 import { useEffect, useState } from "react";
-import YoneticiPage from "../page";
+import YoneticiPage from "../page"; // Eğer dosya yapın böyleyse (yani /yonetici/page.tsx varsa) bu şekilde import et!
 
-const IlanlarPage = () => {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const [ilanlar, setIlanlar] = useState<any[]>([]);
+// Tipler
+interface Ilan {
+  _id: string;
+  baslik: string;
+  kadro: string;
+  baslangic: string;
+  bitis: string;
+  belgeler: string[];
+  kosullar: string;
+}
 
-  // Simülasyon
+const YoneticiIlanlarPage = () => {
+  const [ilanlar, setIlanlar] = useState<Ilan[]>([]);
+
   useEffect(() => {
-    const dummyIlanlar = [
-      {
-        id: 1,
-        baslik: "Bilgisayar Mühendisliği - Dr. Öğr. Üyesi",
-        kadro: "Dr. Öğr. Üyesi",
-        basvuru: "12",
-        baslangic: "2025-04-01",
-        bitis: "2025-04-30",
-      },
-      {
-        id: 2,
-        baslik: "Makine Mühendisliği - Doçent",
-        kadro: "Doçent",
-        basvuru: "23",
-        baslangic: "2025-03-20",
-        bitis: "2025-04-10",
-      },
-      {
-        id: 3,
-        baslik: "Bil. Sis. Mühendisliği - Doçent",
-        kadro: "Doçent",
-        basvuru: "8",
-        baslangic: "2025-03-22",
-        bitis: "2025-04-13",
-      },
-    ];
-    setIlanlar(dummyIlanlar);
+    const fetchIlanlar = async () => {
+      const res = await fetch("http://localhost:5000/backend-api/ilanlar");
+      const data = await res.json();
+      setIlanlar(data);
+    };
+    fetchIlanlar();
   }, []);
-  const router = useRouter();
 
   return (
     <YoneticiPage>
-      <div>
-        <h1 className="text-2xl font-bold mb-6">İlan Listesi</h1>
-        <h1 className="text-l font-semibold mb-6">
-          İlanı düzenlemek için ilgili ilan noya basın.
-        </h1>
+      <div className="p-8">
+        <h1 className="text-3xl font-bold mb-8">Tüm İlanlar</h1>
+
         <table className="w-full border border-gray-300 rounded-lg overflow-hidden text-sm">
           <thead className="bg-gray-100 text-left">
             <tr>
-              <th className="p-2">No</th>
               <th className="p-2">Başlık</th>
               <th className="p-2">Kadro</th>
-              <th className="p-2">Başvuru Sayısı</th>
+              <th className="p-2">Kontenjan</th>
               <th className="p-2">Başlangıç</th>
               <th className="p-2">Bitiş</th>
-              <th className="p-2">Durum</th>
+              <th className="p-2">Koşullar</th>
+              <th className="p-2">İşlem</th>
             </tr>
           </thead>
           <tbody>
-            {ilanlar.map((ilan, index) => {
-              const bugun = new Date();
-              const bitisTarihi = new Date(ilan.bitis);
-              const aktif = bitisTarihi >= bugun;
-
-              return (
-                <tr key={ilan.id} className="border-t">
-                  <td className="p-2">
-                    <button
-                      onClick={() =>
-                        router.push(`/yonetici/ilanlar/${ilan.id}`)
-                      }
-                      className="cursor-pointer bg-amber-300 rounded px-2"
-                    >
-                      {index + 1}
-                    </button>
-                  </td>
-                  <td className="p-2">{ilan.baslik}</td>
-                  <td className="p-2">{ilan.kadro}</td>
-                  <td className="p-2">{ilan.basvuru}</td>
-                  <td className="p-2">{ilan.baslangic}</td>
-                  <td className="p-2">{ilan.bitis}</td>
-                  <td className="p-2">
-                    <span
-                      className={`px-2 py-1 rounded text-white text-xs ${
-                        aktif ? "bg-green-600" : "bg-red-600"
-                      }`}
-                    >
-                      {aktif ? "Aktif" : "Süresi Doldu"}
-                    </span>
-                  </td>
-                </tr>
-              );
-            })}
+            {ilanlar.map((ilan) => (
+              <tr key={ilan._id} className="border-t">
+                <td className="p-2">{ilan.baslik}</td>
+                <td className="p-2">{ilan.kadro}</td>
+                <td className="p-2"></td>
+                <td className="p-2">{ilan.baslangic?.slice(0, 10)}</td>
+                <td className="p-2">{ilan.bitis?.slice(0, 10)}</td>
+                <td className="p-2">{ilan.kosullar}</td>
+                <td className="p-2">
+                  <Link
+                    href={`/yonetici/ilanlar/${ilan._id}`}
+                    className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-1 rounded text-sm"
+                  >
+                    Detay
+                  </Link>
+                </td>
+              </tr>
+            ))}
           </tbody>
         </table>
       </div>
@@ -100,4 +70,4 @@ const IlanlarPage = () => {
   );
 };
 
-export default IlanlarPage;
+export default YoneticiIlanlarPage;

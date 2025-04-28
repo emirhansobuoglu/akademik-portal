@@ -1,87 +1,66 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
+
+interface NihaiKararProps {
+  ilanId: string;
+}
 
 interface Aday {
-  id: string;
+  _id: string;
   adSoyad: string;
   tcNo: string;
 }
 
-interface NihaiKararProps {
-  adaylar: Aday[];
-  kontenjan: number;
-}
+const NihaiKarar: React.FC<NihaiKararProps> = ({ ilanId }) => {
+  const [adaylar, setAdaylar] = useState<Aday[]>([]);
+  const [kontenjan, setKontenjan] = useState<number>(1);
 
-const NihaiKarar: React.FC<NihaiKararProps> = ({ adaylar, kontenjan }) => {
-  const [seciliAdaylar, setSeciliAdaylar] = useState<string[]>([]);
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        // İlan bilgilerini çekelim (kontenjanı alacağız)
+        const ilanRes = await fetch(
+          `http://localhost:5000/backend-api/ilanlar/${ilanId}`
+        );
+        const ilanData = await ilanRes.json();
+        setKontenjan(ilanData.kontenjan || 1);
 
-  const handleSelect = (id: string) => {
-    if (seciliAdaylar.includes(id)) {
-      // Seçili ise kaldır
-      setSeciliAdaylar(seciliAdaylar.filter((seciliId) => seciliId !== id));
-    } else {
-      // Seçili değilse ekle
-      if (seciliAdaylar.length < kontenjan) {
-        setSeciliAdaylar([...seciliAdaylar, id]);
+        // Adayları çekelim
+        const adayRes = await fetch(
+          `http://localhost:5000/backend-api/basvurular?ilanId=${ilanId}`
+        );
+        const adayData = await adayRes.json();
+        setAdaylar(adayData);
+      } catch (error) {
+        console.error("Nihai karar verileri yüklenemedi:", error);
       }
-    }
-  };
+    };
 
-  const handleOnayla = () => {
-    console.log("Seçilen Adaylar:", seciliAdaylar);
-    alert(`Seçilen adaylar onaylandı: ${seciliAdaylar.join(", ")}`);
-    // İleride buradan backend'e seçilen adayları göndereceğiz.
-  };
+    fetchData();
+  }, [ilanId]);
 
   return (
-    <div className="bg-white shadow p-6 rounded-lg space-y-6 mb-8">
-      <h2 className="text-2xl font-bold mb-4">Nihai Karar Ver</h2>
-      <p className="text-gray-600 mb-4">
-        Kontenjan: {kontenjan} kişi alınacak.
+    <div className="space-y-4">
+      <h3 className="text-xl font-semibold">Nihai Karar Seçimi</h3>
+
+      {/* Adaylar Listesi */}
+      <ul className="space-y-2">
+        {adaylar.map((aday) => (
+          <li key={aday._id} className="flex items-center gap-4">
+            <input type="checkbox" id={aday._id} name="adaySecimi" />
+            <label htmlFor={aday._id}>
+              {aday.adSoyad} ({aday.tcNo})
+            </label>
+          </li>
+        ))}
+      </ul>
+
+      <p className="text-sm text-gray-500">
+        {kontenjan} kişilik kontenjan bulunmaktadır.
       </p>
 
-      <table className="w-full border border-gray-300 rounded-lg overflow-hidden text-sm">
-        <thead className="bg-gray-100 text-left">
-          <tr>
-            <th className="p-2">Seç</th>
-            <th className="p-2">Ad Soyad</th>
-            <th className="p-2">TC No</th>
-          </tr>
-        </thead>
-        <tbody>
-          {adaylar.map((aday) => {
-            const isSelected = seciliAdaylar.includes(aday.id);
-            const isDisabled = !isSelected && seciliAdaylar.length >= kontenjan;
-
-            return (
-              <tr key={aday.id} className="border-t">
-                <td className="p-2 border">
-                  <input
-                    type="checkbox"
-                    checked={isSelected}
-                    disabled={isDisabled}
-                    onChange={() => handleSelect(aday.id)}
-                    className="accent-blue-600 cursor-pointer"
-                  />
-                </td>
-                <td className="p-2 border">{aday.adSoyad}</td>
-                <td className="p-2 border">{aday.tcNo}</td>
-              </tr>
-            );
-          })}
-        </tbody>
-      </table>
-
-      <div className="flex justify-end">
-        <button
-          onClick={handleOnayla}
-          className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded"
-          disabled={seciliAdaylar.length !== kontenjan}
-        >
-          Seçilenleri Onayla
-        </button>
-      </div>
+      {/* Kaydet Butonu vs. buraya koyulabilir */}
     </div>
   );
 };

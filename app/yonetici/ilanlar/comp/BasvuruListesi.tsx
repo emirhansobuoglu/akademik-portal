@@ -1,11 +1,6 @@
 "use client";
 
-interface Basvuru {
-  id: string;
-  adSoyad: string;
-  tcNo: string;
-  durum: "Beklemede" | "Onaylandı" | "Reddedildi";
-}
+import { Basvuru } from "@/app/types/basvuru";
 
 const BasvuruListesi = ({ basvurular }: { basvurular: Basvuru[] }) => {
   return (
@@ -24,7 +19,7 @@ const BasvuruListesi = ({ basvurular }: { basvurular: Basvuru[] }) => {
         </thead>
         <tbody>
           {basvurular.map((basvuru, index) => (
-            <tr key={basvuru.id} className="border-t">
+            <tr key={basvuru._id} className="border-t">
               <td className="p-2">
                 <span className="px-2 ">{index + 1}</span>
               </td>

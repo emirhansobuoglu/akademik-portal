@@ -1,13 +1,6 @@
 "use client";
 
-interface Ilan {
-  id: string;
-  baslik: string;
-  kadro: string;
-  baslangic: string;
-  bitis: string;
-  aciklama: string;
-}
+import { Ilan } from "@/app/types/ilan";
 
 const IlanBilgileri = ({ ilan }: { ilan: Ilan }) => (
   <div className="bg-white shadow p-6 rounded-lg space-y-4 mb-8">

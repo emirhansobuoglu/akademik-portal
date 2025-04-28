@@ -10,7 +10,9 @@ interface Aday {
   raporUrl: string;
   tablo5Url: string;
 }
-
+interface DegerlendirmeProps {
+  ilanId: string;
+}
 const dummyAdaylar: Aday[] = [
   {
     id: "1",
@@ -28,7 +30,7 @@ const dummyAdaylar: Aday[] = [
   },
 ];
 
-const Degerlendirme = () => {
+const Degerlendirme: React.FC<DegerlendirmeProps> = ({ ilanId }) => {
   const [selectedPdf, setSelectedPdf] = useState<string | null>(null);
 
   const handleOpenPdf = (pdfUrl: string) => {
@@ -42,7 +44,7 @@ const Degerlendirme = () => {
   return (
     <div className="bg-white shadow p-6 rounded-lg space-y-6 mb-8">
       <h2 className="text-2xl font-bold mb-4">Değerlendirme</h2>
-
+      {ilanId}
       <table className="w-full border border-gray-300 rounded-lg overflow-hidden text-sm">
         <thead className="bg-gray-100 text-left">
           <tr>

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 interface KadroKriterEkleProps {
   ilanId: string;
@@ -8,127 +8,124 @@ interface KadroKriterEkleProps {
 }
 
 interface Kriter {
-  id: string;
-  kategori: string;
+  _id: string;
   aciklama: string;
-  puan: number;
+  maxPuan: number;
 }
-
-const kategoriOptions = [
-  "Bilimsel Yayınlar",
-  "Projeler",
-  "Patentler",
-  "Atıflar",
-  "İdari Görevler",
-  "Jüri Üyelikleri",
-  "Sanatsal Etkinlikler",
-  "Uluslararası Projeler",
-  "Üniversite-Sanayi İşbirlikleri",
-  "Danışmanlıklar",
-];
 
 const KadroKriterEkle: React.FC<KadroKriterEkleProps> = ({
   ilanId,
   basvuruSuresiBitti,
 }) => {
-  const [kriterler, setKriterler] = useState<Kriter[]>([
-    {
-      id: "1",
-      kategori: "Bilimsel Yayınlar",
-      aciklama: "SCI Expanded dergilerde en az 2 yayın yapmış olmak.",
-      puan: 30,
-    },
-    {
-      id: "2",
-      kategori: "Projeler",
-      aciklama: "Uluslararası proje yürütmüş olmak.",
-      puan: 20,
-    },
-    {
-      id: "3",
-      kategori: "Patentler",
-      aciklama: "Ulusal patent sahibi olmak.",
-      puan: 15,
-    },
-  ]);
-
-  const [kategori, setKategori] = useState("");
   const [aciklama, setAciklama] = useState("");
-  const [puan, setPuan] = useState<number | "">("");
+  const [maxPuan, setMaxPuan] = useState<number>(0);
+  const [kriterler, setKriterler] = useState<Kriter[]>([]);
+  const [loading, setLoading] = useState(false);
 
-  const handleEkle = () => {
-    if (!kategori || !aciklama || puan === "") {
-      alert("Tüm alanları doldurunuz.");
+  useEffect(() => {
+    const fetchKriterler = async () => {
+      try {
+        const res = await fetch(
+          `http://localhost:5000/backend-api/kriterler?ilanId=${ilanId}`
+        );
+        const data = await res.json();
+        setKriterler(data);
+      } catch (error) {
+        console.error("Kriterler yüklenemedi:", error);
+      }
+    };
+
+    fetchKriterler();
+  }, [ilanId]);
+
+  const handleEkle = async () => {
+    if (!aciklama || maxPuan <= 0) {
+      alert("Açıklama ve Puan boş olamaz!");
       return;
     }
 
-    const yeniKriter: Kriter = {
-      id: Date.now().toString(),
-      kategori,
-      aciklama,
-      puan: Number(puan),
-    };
+    setLoading(true);
+    try {
+      const res = await fetch("http://localhost:5000/backend-api/kriterler", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ilanId, aciklama, maxPuan }),
+        // kategori dummy gönderiyoruz çünkü backend şeması istiyor olabilir şimdilik
+      });
 
-    setKriterler([...kriterler, yeniKriter]);
-    setKategori("");
-    setAciklama("");
-    setPuan("");
+      if (res.ok) {
+        const yeniKriter = await res.json();
+        setKriterler((prev) => [...prev, yeniKriter]);
+        setAciklama("");
+        setMaxPuan(0);
+      } else {
+        alert("Kriter eklenemedi!");
+      }
+    } catch (error) {
+      console.error("Kriter ekleme hatası:", error);
+    }
+    setLoading(false);
   };
-  const handleSil = (id: string) => {
-    const yeniKriterler = kriterler.filter((kriter) => kriter.id !== id);
-    setKriterler(yeniKriterler);
+
+  const handleSil = async (kriterId: string) => {
+    const onay = window.confirm("Bu kriteri silmek istiyor musun?");
+    if (!onay) return;
+
+    try {
+      const res = await fetch("http://localhost:5000/backend-api/kriterler", {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ kriterId }),
+      });
+
+      if (res.ok) {
+        setKriterler((prev) => prev.filter((k) => k._id !== kriterId));
+      } else {
+        alert("Kriter silinemedi!");
+      }
+    } catch (error) {
+      console.error("Kriter silme hatası:", error);
+    }
   };
+
+  if (basvuruSuresiBitti) {
+    return (
+      <div className="p-6 bg-gray-100 rounded-lg">
+        Başvuru süresi bittiği için yeni kriter eklenemez.
+      </div>
+    );
+  }
 
   return (
     <div className="bg-white shadow p-6 rounded-lg space-y-6 mb-8">
-      <h2 className="text-2xl font-bold mb-4">Kadro Kriterleri - {ilanId} -</h2>
+      <h2 className="text-2xl font-bold mb-4">Kadro Kriterleri</h2>
 
-      {!basvuruSuresiBitti && (
-        <div className="flex flex-col gap-4">
-          {/* Kategori Seçimi */}
-          <select
-            value={kategori}
-            onChange={(e) => setKategori(e.target.value)}
-            className="border p-2 rounded"
-          >
-            <option value="">Kategori Seçin</option>
-            {kategoriOptions.map((option) => (
-              <option key={option} value={option}>
-                {option}
-              </option>
-            ))}
-          </select>
+      {/* Kriter Ekleme Alanı */}
+      <div className="flex flex-col md:flex-row gap-4">
+        <input
+          type="text"
+          placeholder="Açıklama"
+          value={aciklama}
+          onChange={(e) => setAciklama(e.target.value)}
+          className="border p-2 rounded flex-1"
+        />
+        <input
+          type="number"
+          placeholder="Maksimum Puan"
+          value={maxPuan}
+          onChange={(e) => setMaxPuan(parseInt(e.target.value))}
+          className="border p-2 rounded w-40"
+        />
+        <button
+          onClick={handleEkle}
+          disabled={loading}
+          className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded"
+        >
+          {loading ? "Ekleniyor..." : "Ekle"}
+        </button>
+      </div>
 
-          {/* Açıklama */}
-          <textarea
-            placeholder="Kriter Açıklaması"
-            value={aciklama}
-            onChange={(e) => setAciklama(e.target.value)}
-            className="border p-2 rounded"
-          />
-
-          {/* Puan */}
-          <input
-            type="number"
-            placeholder="Puan"
-            value={puan}
-            onChange={(e) =>
-              setPuan(e.target.value === "" ? "" : Number(e.target.value))
-            }
-            className="border p-2 rounded"
-          />
-
-          {/* Ekle Butonu */}
-          <button
-            onClick={handleEkle}
-            className="bg-blue-600 cursor-pointer hover:bg-blue-700 text-white px-4 py-2 rounded"
-          >
-            Kriter Ekle
-          </button>
-        </div>
-      )}
-
-      {/* Eklenen Kriterler Listesi */}
+      {/* Eklenen Kriterler Tablosu */}
       {kriterler.length > 0 && (
         <div className="mt-8">
           <h3 className="text-xl font-semibold mb-4">Eklenen Kriterler</h3>
@@ -137,23 +134,21 @@ const KadroKriterEkle: React.FC<KadroKriterEkleProps> = ({
             <thead className="bg-gray-100 text-left">
               <tr>
                 <th className="p-2">#</th>
-                <th className="p-2">Kategori</th>
                 <th className="p-2">Açıklama</th>
                 <th className="p-2">Puan</th>
-                <th className="p-2 text-center">İşlem</th> {/* Yeni başlık */}
+                <th className="p-2">İşlem</th>
               </tr>
             </thead>
             <tbody>
               {kriterler.map((kriter, index) => (
-                <tr key={kriter.id} className="border-t">
+                <tr key={kriter._id} className="border-t">
                   <td className="p-2">{index + 1}</td>
-                  <td className="p-2">{kriter.kategori}</td>
                   <td className="p-2">{kriter.aciklama}</td>
-                  <td className="p-2">{kriter.puan}</td>
-                  <td className="p-2 text-center">
+                  <td className="p-2">{kriter.maxPuan}</td>
+                  <td className="p-2">
                     <button
-                      onClick={() => handleSil(kriter.id)}
-                      className="bg-red-500 hover:bg-red-600 cursor-pointer text-white px-2 py-1 rounded text-xs"
+                      onClick={() => handleSil(kriter._id)}
+                      className="bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded text-xs"
                     >
                       Sil
                     </button>
