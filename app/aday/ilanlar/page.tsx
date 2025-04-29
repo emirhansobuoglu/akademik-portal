@@ -1,8 +1,8 @@
 "use client";
 
+import uploadFileToFirebase from "@/app/utils/firebaseUpload";
 import { useEffect, useState } from "react";
 
-// Tipler
 interface Ilan {
   _id: string;
   baslik: string;
@@ -11,59 +11,85 @@ interface Ilan {
   bitis: string;
   belgeler: string[];
   kosullar: string;
+  kontenjan: number;
+  kadroKriteri?: string;
 }
 
 const AdayIlanlarPage = () => {
   const [ilanlar, setIlanlar] = useState<Ilan[]>([]);
-  const [selectedIlan, setSelectedIlan] = useState<Ilan | null>(null); // Seçilen ilan
-  const [files, setFiles] = useState<Map<number, File | null>>(new Map()); // Yüklenen dosyalar
+  const [kadroKriterleri, setKadroKriterleri] = useState<Record<string, string>>({});
+  const [selectedIlan, setSelectedIlan] = useState<Ilan | null>(null);
+  const [cvFile, setCvFile] = useState<File | null>(null);
+  const [ekDosya, setEkDosya] = useState<File | null>(null);
+  const [ekAciklama, setEkAciklama] = useState("");
 
   useEffect(() => {
-    const fetchIlanlar = async () => {
+    const fetchData = async () => {
       try {
-        const res = await fetch("http://localhost:5000/backend-api/ilanlar");
-        const data = await res.json();
-        setIlanlar(data);
+        const ilanRes = await fetch("http://localhost:5000/backend-api/ilanlar");
+        const ilanData = await ilanRes.json();
+        setIlanlar(ilanData);
+
+        // Her ilan için kriter verisi çek
+        const kriterMap: Record<string, string> = {};
+        for (const ilan of ilanData) {
+          const kriterRes = await fetch(
+            `http://localhost:5000/backend-api/kriterler?ilanId=${ilan._id}`
+          );
+          const kriterData = await kriterRes.json();
+          if (Array.isArray(kriterData) && kriterData.length > 0) {
+            kriterMap[ilan._id] = kriterData.map((k) => k.aciklama).join(", ");
+          } else {
+            kriterMap[ilan._id] = "-";
+          }
+        }
+
+        setKadroKriterleri(kriterMap);
       } catch (error) {
-        console.error("İlanlar getirilemedi", error);
+        console.error("Veriler getirilemedi", error);
       }
     };
-    fetchIlanlar();
+
+    fetchData();
   }, []);
+
 
   const handleBasvur = async (ilanId: string) => {
     const basvuranAd = localStorage.getItem("name");
 
-    if (!basvuranAd) {
-      alert("Giriş bilgisi bulunamadı. Lütfen tekrar giriş yapın!");
+    if (!basvuranAd || !selectedIlan || !cvFile) {
+      alert("Lütfen gerekli bilgileri ve dosyaları giriniz!");
       return;
     }
-
-    if (!selectedIlan) {
-      alert("Lütfen başvurduğunuz ilana tıklayın ve belgelerinizi girin.");
-      return;
-    }
-
-    const formData = new FormData();
-    formData.append("adayAd", basvuranAd);
-    formData.append("ilanId", ilanId);
-    formData.append("durum", "Beklemede");
-
-    selectedIlan.belgeler.forEach((belge, index) => {
-      const file = files.get(index);
-      if (file) {
-        formData.append("belgeler", file, file.name);
-      }
-    });
 
     try {
+      const cvUrl = await uploadFileToFirebase(cvFile);
+      let ekDosyaUrl = "";
+
+      if (ekDosya) {
+        ekDosyaUrl = await uploadFileToFirebase(ekDosya);
+      }
+
+      const body = {
+        adayAd: basvuranAd,
+        ilanId,
+        durum: "Beklemede",
+        belgeler: [cvUrl, ekDosyaUrl].filter(Boolean),
+        aciklama: ekAciklama,
+      };
+
       const res = await fetch("http://localhost:5000/backend-api/basvurular", {
         method: "POST",
-        body: formData,
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
       });
 
       if (res.ok) {
         alert("✅ Başvurunuz başarıyla yapıldı!");
+        setCvFile(null);
+        setEkDosya(null);
+        setEkAciklama("");
+        setSelectedIlan(null);
       } else {
         const data = await res.json();
         alert(`❌ Başvuru başarısız oldu: ${data.error || "Bilinmeyen hata"}`);
@@ -71,19 +97,6 @@ const AdayIlanlarPage = () => {
     } catch (error) {
       console.error("Başvuru hatası:", error);
       alert("❌ Başvuru sırasında hata oluştu.");
-    }
-  };
-
-
-  const handleIlanSec = (ilan: Ilan) => {
-    setSelectedIlan(ilan);
-  };
-
-  const handleFileChange = (index: number, event: React.ChangeEvent<HTMLInputElement>) => {
-    const newFiles = new Map(files);
-    if (event.target.files && event.target.files[0]) {
-      newFiles.set(index, event.target.files[0]);
-      setFiles(newFiles);
     }
   };
 
@@ -100,6 +113,8 @@ const AdayIlanlarPage = () => {
             <th className="p-2">Bitiş</th>
             <th className="p-2">Belgeler</th>
             <th className="p-2">Koşullar</th>
+            <th className="p-2">Kontenjan</th>
+            <th className="p-2">Kadro Kriteri</th>
             <th className="p-2">İşlem</th>
           </tr>
         </thead>
@@ -118,9 +133,11 @@ const AdayIlanlarPage = () => {
                 </ul>
               </td>
               <td className="p-2">{ilan.kosullar}</td>
+              <td className="p-2">{ilan.kontenjan}</td>
+              <td className="p-2">{kadroKriterleri[ilan._id] || "-"}</td>
               <td className="p-2">
                 <button
-                  onClick={() => handleIlanSec(ilan)}
+                  onClick={() => setSelectedIlan(ilan)}
                   className="bg-green-600 text-white px-4 py-2 rounded"
                 >
                   Başvur
@@ -131,35 +148,48 @@ const AdayIlanlarPage = () => {
         </tbody>
       </table>
 
-      {/* Seçilen ilan bilgileri ve başvuru alanı */}
       {selectedIlan && (
         <div className="mt-8 p-4 border border-gray-300 rounded">
           <h3 className="font-semibold mb-4">Başvurmak İstediğiniz İlan</h3>
 
           <div className="mb-4">
-            <h4 className="font-semibold">Başlık:</h4>
+            <h4 className="font-semibold">İlan Başlığı:</h4>
             <p>{selectedIlan.baslik}</p>
           </div>
 
           <div className="mb-4">
-            <h4 className="font-semibold">Belgeler:</h4>
-            <ul className="list-disc ml-4">
-              {selectedIlan.belgeler.map((belge, i) => (
-                <li key={i}>
-                  {belge}
-                  <input
-                    type="file"
-                    onChange={(e) => handleFileChange(i, e)}
-                    className="border p-2 w-full mt-2"
-                  />
-                </li>
-              ))}
-            </ul>
+            <h4 className="font-semibold">Başvuru Koşulları:</h4>
+            <p>{selectedIlan.kosullar || "Koşul belirtilmemiş."}</p>
           </div>
 
           <div className="mb-4">
-            <h4 className="font-semibold">Başvuru Koşulları:</h4>
-            <p>{selectedIlan.kosullar}</p>
+            <h4 className="font-semibold">Kadro Kriteri:</h4>
+            <p>{kadroKriterleri[selectedIlan._id] || "Belirtilmemiş."}</p>
+          </div>
+
+          <div className="mb-4">
+            <h4 className="font-semibold">CV Yükle:</h4>
+            <input
+              type="file"
+              onChange={(e) => setCvFile(e.target.files?.[0] || null)}
+              className="border p-2 w-full"
+              required
+            />
+          </div>
+
+          <div className="mb-4">
+            <h4 className="font-semibold">Ek Belgeler:</h4>
+            <input
+              type="file"
+              onChange={(e) => setEkDosya(e.target.files?.[0] || null)}
+              className="border p-2 w-full"
+            />
+            <textarea
+              placeholder="Ek belge açıklaması"
+              value={ekAciklama}
+              onChange={(e) => setEkAciklama(e.target.value)}
+              className="border p-2 w-full mt-2"
+            ></textarea>
           </div>
 
           <button

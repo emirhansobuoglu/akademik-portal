@@ -27,4 +27,16 @@ router.get("/:id", async (req, res) => {
     }
 });
 
+// 🔥 Yeni ilan ekle
+router.post("/", async (req, res) => {
+    try {
+        const yeniIlan = new Ilan(req.body);
+        const kaydedilen = await yeniIlan.save();
+        res.status(201).json(kaydedilen);
+    } catch (error) {
+        console.error("🔥 İlan Ekleme Hatası:", error);
+        res.status(500).json({ error: "İlan eklenemedi" });
+    }
+});
+
 export default router;

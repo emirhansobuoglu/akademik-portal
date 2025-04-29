@@ -14,11 +14,14 @@ type Basvuru = {
 type Ilan = {
   _id: string;
   baslik: string;
+  kadro: string;
+  kontenjan: number;
+  kosullar: string;
 };
 
 export default function BasvurularimPage() {
   const [basvurular, setBasvurular] = useState<Basvuru[]>([]);
-  const [ilanBasliklari, setIlanBasliklari] = useState<Record<string, string>>({});
+  const [ilanlarMap, setIlanlarMap] = useState<Record<string, Ilan>>({});
 
   useEffect(() => {
     const fetchBasvurular = async () => {
@@ -31,31 +34,21 @@ export default function BasvurularimPage() {
 
       try {
         const res = await fetch(`http://localhost:5000/backend-api/basvurular/aday/${adayAd}`);
-        if (!res.ok) {
-          throw new Error("Başvurular alınamadı");
-        }
         const basvurularData = await res.json();
         setBasvurular(basvurularData);
 
-        // Başvurulan ilanların başlıklarını çekelim
-        const ilanPromises = basvurularData.map((basvuru: Basvuru) =>
-          fetch(`http://localhost:5000/backend-api/ilanlar/${basvuru.ilanId}`)
-            .then((res) => res.json())
-            .then((ilan: Ilan) => ({ id: ilan._id, baslik: ilan.baslik }))
-            .catch(() => ({ id: basvuru.ilanId, baslik: "Başlık bulunamadı" }))
+        // İlan bilgilerini al
+        const ilanPromises = basvurularData.map((b: Basvuru) =>
+          fetch(`http://localhost:5000/backend-api/ilanlar/${b.ilanId}`)
+            .then((r) => r.json())
+            .then((ilan: Ilan) => ({ [ilan._id]: ilan }))
         );
 
-        const ilanResults = await Promise.all(ilanPromises);
-
-        const yeniBasliklar: Record<string, string> = {};
-        ilanResults.forEach((ilan) => {
-          yeniBasliklar[ilan.id] = ilan.baslik;
-        });
-
-        setIlanBasliklari(yeniBasliklar);
+        const ilanArray = await Promise.all(ilanPromises);
+        const ilanMap = Object.assign({}, ...ilanArray);
+        setIlanlarMap(ilanMap);
       } catch (error) {
-        console.error("Başvurular getirilemedi:", error);
-        setBasvurular([]);
+        console.error("Veriler getirilemedi:", error);
       }
     };
 
@@ -69,32 +62,58 @@ export default function BasvurularimPage() {
       {basvurular.length === 0 ? (
         <p>Henüz başvuru yapılmamış.</p>
       ) : (
-        <div className="grid gap-4">
-          {basvurular.map((basvuru) => (
-            <div key={basvuru._id} className="p-4 border rounded shadow">
-              <h2 className="text-lg font-semibold">
-                {/* İlan başlığı varsa gösterelim */}
-                İlan Başlığı: {ilanBasliklari[basvuru.ilanId] || "Başlık yükleniyor..."}
-              </h2>
-              <p>Durum:
-                <span className={`ml-2 font-semibold ${basvuru.durum === "Beklemede"
-                  ? "text-yellow-500"
-                  : basvuru.durum === "Onaylandı"
-                    ? "text-green-600"
-                    : basvuru.durum === "Reddedildi"
-                      ? "text-red-600"
-                      : "text-blue-600"
-                  }`}>
-                  {basvuru.durum}
-                </span>
-              </p>
-              <p className="text-sm text-gray-500 mt-2">Açıklama: {basvuru.aciklama}</p>
-              <p className="text-sm text-gray-500 mt-1">
-                Belgeler: {basvuru.belgeler.join(", ")}
-              </p>
-            </div>
-          ))}
-        </div>
+        <table className="w-full border border-gray-300 text-sm">
+          <thead className="bg-gray-100 text-left">
+            <tr>
+              <th className="p-2">İlan Başlığı</th>
+              <th className="p-2">Kadro</th>
+              <th className="p-2">Kontenjan</th>
+              <th className="p-2">Koşullar</th>
+              <th className="p-2">Durum</th>
+              <th className="p-2">Açıklama</th>
+              <th className="p-2">Belgeler</th>
+            </tr>
+          </thead>
+          <tbody>
+            {basvurular.map((b) => {
+              const ilan = ilanlarMap[b.ilanId];
+              return (
+                <tr key={b._id} className="border-t">
+                  <td className="p-2">{ilan?.baslik || "Bilinmiyor"}</td>
+                  <td className="p-2">{ilan?.kadro || "-"}</td>
+                  <td className="p-2">{ilan?.kontenjan ?? "-"}</td>
+                  <td className="p-2">{ilan?.kosullar || "-"}</td>
+                  <td className="p-2 font-semibold text-sm">
+                    <span
+                      className={`${b.durum === "Beklemede"
+                          ? "text-yellow-500"
+                          : b.durum === "Onaylandı"
+                            ? "text-green-600"
+                            : b.durum === "Reddedildi"
+                              ? "text-red-600"
+                              : "text-blue-600"
+                        }`}
+                    >
+                      {b.durum}
+                    </span>
+                  </td>
+                  <td className="p-2 text-gray-600 text-sm">{b.aciklama}</td>
+                  <td className="p-2 text-xs">
+                    <ul className="list-disc ml-4">
+                      {b.belgeler.map((belge, i) => (
+                        <li key={i}>
+                          <a href={belge} target="_blank" rel="noopener noreferrer" className="text-blue-600 underline">
+                            Belge {i + 1}
+                          </a>
+                        </li>
+                      ))}
+                    </ul>
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
       )}
     </div>
   );

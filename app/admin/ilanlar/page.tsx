@@ -12,6 +12,7 @@ interface Ilan {
   bitis: string;
   belgeler: string[];
   kosullar: string;
+  kontenjan: number;
 }
 
 const IlanlarPage = () => {
@@ -23,7 +24,10 @@ const IlanlarPage = () => {
     bitis: "",
     belgeler: [""],
     kosullar: "",
+    kontenjan: 1,
   });
+
+  const [kadroKriterleri, setKadroKriterleri] = useState<string[]>([]);
 
   useEffect(() => {
     const fetchIlanlar = async () => {
@@ -54,14 +58,38 @@ const IlanlarPage = () => {
         },
         body: JSON.stringify(form),
       });
-      if (res.ok) {
-        alert("✅ İlan başarıyla eklendi!");
-        setForm({ baslik: "", kadro: "", baslangic: "", bitis: "", belgeler: [""], kosullar: "" });
-        const data = await res.json();
-        setIlanlar((prev) => [...prev, data]);
-      } else {
-        alert("❌ Sunucu hatası!");
+
+      if (!res.ok) throw new Error("İlan eklenemedi");
+
+      const ilan = await res.json();
+
+      // Kadro kriterlerini ayrı bir istekle ekleyelim
+      for (const kriter of kadroKriterleri) {
+        await fetch("http://localhost:5000/backend-api/kriterler", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            ilanId: ilan._id,
+            aciklama: kriter,
+            maxPuan: 100,
+          }),
+        });
       }
+
+      alert("✅ İlan başarıyla eklendi!");
+      setForm({
+        baslik: "",
+        kadro: "",
+        baslangic: "",
+        bitis: "",
+        belgeler: [""],
+        kosullar: "",
+        kontenjan: 1,
+      });
+      setKadroKriterleri([]);
+      setIlanlar((prev) => [...prev, ilan]);
     } catch (error) {
       console.error("İlan ekleme hatası:", error);
       alert("❌ İlan eklenemedi");
@@ -77,10 +105,10 @@ const IlanlarPage = () => {
         method: "DELETE",
       });
       setIlanlar((prev) => prev.filter((ilan) => ilan._id !== id));
-      alert("İlan silindi!");
+      alert("✅ İlan silindi!");
     } catch (error) {
-      console.error("Silme hatası", error);
-      alert("İlan silinemedi!");
+      console.error("Silme hatası:", error);
+      alert("❌ İlan silinemedi");
     }
   };
 
@@ -92,6 +120,16 @@ const IlanlarPage = () => {
     const yeniBelgeler = [...form.belgeler];
     yeniBelgeler[index] = value;
     setForm({ ...form, belgeler: yeniBelgeler });
+  };
+
+  const kriterEkle = () => {
+    setKadroKriterleri([...kadroKriterleri, ""]);
+  };
+
+  const kriterDegistir = (index: number, value: string) => {
+    const yeniKriterler = [...kadroKriterleri];
+    yeniKriterler[index] = value;
+    setKadroKriterleri(yeniKriterler);
   };
 
   return (
@@ -123,7 +161,6 @@ const IlanlarPage = () => {
             onChange={(e) => setForm({ ...form, baslangic: e.target.value })}
             className="border p-2 w-full"
           />
-
           <input
             type="date"
             value={form.bitis}
@@ -131,6 +168,15 @@ const IlanlarPage = () => {
             className="border p-2 w-full"
           />
         </div>
+
+        <input
+          type="number"
+          value={form.kontenjan}
+          onChange={(e) => setForm({ ...form, kontenjan: parseInt(e.target.value) })}
+          placeholder="Kontenjan (örnek: 2)"
+          className="border p-2 w-full"
+          min={1}
+        />
 
         <div className="space-y-2">
           <h2 className="font-semibold">Gerekli Belgeler</h2>
@@ -162,6 +208,26 @@ const IlanlarPage = () => {
           ></textarea>
         </div>
 
+        <div className="space-y-2">
+          <h2 className="font-semibold">Kadro Kriterleri</h2>
+          {kadroKriterleri.map((kriter, index) => (
+            <input
+              key={index}
+              type="text"
+              value={kriter}
+              onChange={(e) => kriterDegistir(index, e.target.value)}
+              placeholder={`Kriter ${index + 1}`}
+              className="border p-2 w-full"
+            />
+          ))}
+          <button
+            onClick={kriterEkle}
+            className="bg-purple-600 text-white px-4 py-2 rounded"
+          >
+            ➕ Kriter Ekle
+          </button>
+        </div>
+
         <button
           onClick={handleEkle}
           className="bg-blue-600 text-white px-6 py-2 rounded"
@@ -170,7 +236,7 @@ const IlanlarPage = () => {
         </button>
       </div>
 
-      {/* İlanlar Tablosu */}
+      {/* İlanlar Listesi */}
       <table className="w-full border border-gray-300 text-sm">
         <thead className="bg-gray-100 text-left">
           <tr>
@@ -180,6 +246,7 @@ const IlanlarPage = () => {
             <th className="p-2">Bitiş</th>
             <th className="p-2">Belgeler</th>
             <th className="p-2">Koşullar</th>
+            <th className="p-2">Kontenjan</th>
             <th className="p-2">İşlem</th>
           </tr>
         </thead>
@@ -198,6 +265,7 @@ const IlanlarPage = () => {
                 </ul>
               </td>
               <td className="p-2">{ilan.kosullar}</td>
+              <td className="p-2">{ilan.kontenjan}</td>
               <td className="p-2 space-y-1 space-x-1 flex flex-col">
                 <Link href={`/admin/ilanlar/${ilan._id}/duzenle`}>
                   <button className="bg-yellow-500 text-white px-2 py-1 rounded w-full">Düzenle</button>
@@ -206,7 +274,7 @@ const IlanlarPage = () => {
                   <button className="bg-purple-500 text-white px-2 py-1 rounded w-full">Başvurular</button>
                 </Link>
                 <button
-                  onClick={() => handleSil(ilan._id)}
+                  onClick={() => ilan._id && handleSil(ilan._id)}
                   className="bg-red-500 text-white px-2 py-1 rounded w-full"
                 >
                   Sil
