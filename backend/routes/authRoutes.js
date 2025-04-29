@@ -19,7 +19,7 @@ router.post("/login", async (req, res) => {
     if (!isMatch) return res.status(400).json({ error: "Şifre yanlış" });
 
     const token = jwt.sign(
-      { userId: user._id, role: user.role, name: user.name },
+      { userId: user._id, role: user.role, name: user.name, tckn: user.tckn },
       JWT_SECRET,
       { expiresIn: "1h" }
     );

@@ -24,7 +24,7 @@ export default function LoginClient() {
         alert("✅ Giriş başarılı!");
         localStorage.setItem("token", data.token);
         localStorage.setItem("name", data.name);
-        localStorage.setItem("tcNo", data.tcNo);
+        localStorage.setItem("tcNo", data.tckn);
         localStorage.setItem("role", data.role);
 
         // 4 rol kontrolü
