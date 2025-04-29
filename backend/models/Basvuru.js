@@ -11,9 +11,9 @@ const BasvuruSchema = new mongoose.Schema({
     enum: ["Beklemede", "Onaylandı", "Reddedildi"],
     default: "Beklemede",
   },
-  kazananMi: {
-    type: Boolean,
-    default: false,
+  juriOnaySayisi: {
+    type: Number,
+    default: 0,
   },
 });
 
