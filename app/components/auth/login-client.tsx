@@ -24,14 +24,25 @@ export default function LoginClient() {
         alert("✅ Giriş başarılı!");
         localStorage.setItem("token", data.token);
         localStorage.setItem("name", data.name);
+        localStorage.setItem("tcNo", data.tcNo);
         localStorage.setItem("role", data.role);
 
-        if (data.role === "aday") {
-          router.push("/aday");
-        } else if (data.role === "admin") {
-          router.push("/admin");
-        } else {
-          alert("❌ Geçersiz rol tanımı.");
+        // 4 rol kontrolü
+        switch (data.role) {
+          case "aday":
+            router.push("/aday");
+            break;
+          case "admin":
+            router.push("/admin");
+            break;
+          case "yonetici":
+            router.push("/yonetici");
+            break;
+          case "juri":
+            router.push("/juri");
+            break;
+          default:
+            alert("❌ Geçersiz rol tanımı.");
         }
       } else {
         alert(`❌ Hata: ${data.error}`);
@@ -43,7 +54,7 @@ export default function LoginClient() {
   };
 
   return (
-    <div className="flex justify-center items-center">
+    <div className="flex justify-center items-center py-20">
       <form
         onSubmit={handleSubmit}
         className="flex flex-col gap-4 bg-gray-100 p-8 rounded shadow-md w-full max-w-md"
@@ -57,6 +68,8 @@ export default function LoginClient() {
           onChange={(e) => setTckn(e.target.value)}
           required
           className="border p-2 rounded"
+          minLength={11}
+          maxLength={11}
         />
         <input
           type="password"
@@ -66,7 +79,10 @@ export default function LoginClient() {
           required
           className="border p-2 rounded"
         />
-        <button type="submit" className="bg-blue-600 text-white py-2 rounded">
+        <button
+          type="submit"
+          className="bg-blue-600 hover:bg-blue-700 text-white py-2 rounded"
+        >
           Giriş Yap
         </button>
       </form>

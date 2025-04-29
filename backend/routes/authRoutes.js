@@ -29,6 +29,7 @@ router.post("/login", async (req, res) => {
       token,
       role: user.role,
       name: user.name,
+      tckn: user.tckn,
     });
   } catch (error) {
     console.error("Giriş hatası:", error);

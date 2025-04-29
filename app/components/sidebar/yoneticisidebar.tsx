@@ -1,11 +1,26 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
-import { AiOutlineFileText } from "react-icons/ai"; // İkon
+import { usePathname, useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
+import { AiOutlineFileText } from "react-icons/ai";
 
 const YonetSidebar = () => {
   const pathname = usePathname();
+  const router = useRouter();
+  const [name, setName] = useState("");
+
+  useEffect(() => {
+    const storedName = localStorage.getItem("name");
+    if (storedName) {
+      setName(storedName);
+    }
+  }, []);
+
+  const handleLogout = () => {
+    localStorage.clear();
+    router.push("/");
+  };
 
   const links = [
     { name: "İlanlar", path: "/yonetici/ilanlar", icon: AiOutlineFileText },
@@ -38,10 +53,10 @@ const YonetSidebar = () => {
 
       {/* Profil ve Çıkış Alanı */}
       <div className="border-t border-gray-700 pt-4 px-2">
-        <div className="text-sm font-semibold mb-2">Emirhan</div>
+        <div className="text-sm font-semibold mb-2">{name || "Yönetici"}</div>
 
         <button
-          onClick={() => console.log("Çıkış yapılacak")}
+          onClick={handleLogout}
           className="w-full text-left cursor-pointer bg-red-600 hover:bg-red-700 transition-all duration-300 text-white py-2 px-3 rounded text-sm"
         >
           Çıkış Yap
