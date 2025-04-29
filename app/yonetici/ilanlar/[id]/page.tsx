@@ -1,25 +1,25 @@
 "use client";
 
+import { use, useEffect, useState } from "react"; // önemli: use hook'u eklendi!
+
 import BasvuruListesi from "@/app/yonetici/ilanlar/comp/BasvuruListesi";
 import IlanBilgileri from "@/app/yonetici/ilanlar/comp/IlanBilgileri";
 import JuriAtama from "@/app/yonetici/ilanlar/comp/JuriAtama";
 import { notFound } from "next/navigation";
 import YoneticiPage from "../../page";
-import Degerlendirme from "../comp/Degerlendirme";
 import KadroKriterEkle from "../comp/Kriterler";
-import NihaiKarar from "../comp/NihaiKarar";
 
 import { Basvuru } from "@/app/types/basvuru";
 import { Ilan } from "@/app/types/ilan";
-import { useEffect, useState } from "react";
 
 // Tipler
-
 interface IlanDetayPageProps {
-  params: { id: string };
+  params: Promise<{ id: string }>; // dikkat! artık Promise olarak alıyoruz
 }
 
 export default function IlanDetayPage({ params }: IlanDetayPageProps) {
+  const { id } = use(params); // params'ı çözüyoruz
+
   const [ilan, setIlan] = useState<Ilan | null>(null);
   const [basvurular, setBasvurular] = useState<Basvuru[]>([]);
   const [basvuruSuresiBitti, setBasvuruSuresiBitti] = useState(false);
@@ -28,7 +28,7 @@ export default function IlanDetayPage({ params }: IlanDetayPageProps) {
     const fetchData = async () => {
       try {
         const ilanRes = await fetch(
-          `http://localhost:5000/backend-api/ilanlar/${params.id}`
+          `http://localhost:5000/backend-api/ilanlar/${id}`
         );
         const ilanData = await ilanRes.json();
 
@@ -40,8 +40,9 @@ export default function IlanDetayPage({ params }: IlanDetayPageProps) {
 
         // Başvuruları çek
         const basvuruRes = await fetch(
-          `http://localhost:5000/backend-api/basvurular?ilanId=${params.id}`
+          `http://localhost:5000/backend-api/basvurular/ilan/${id}`
         );
+
         const basvuruData = await basvuruRes.json();
         setBasvurular(basvuruData);
 
@@ -55,7 +56,7 @@ export default function IlanDetayPage({ params }: IlanDetayPageProps) {
     };
 
     fetchData();
-  }, [params.id]);
+  }, [id]);
 
   if (!ilan) {
     return <div>Yükleniyor...</div>;
@@ -68,28 +69,17 @@ export default function IlanDetayPage({ params }: IlanDetayPageProps) {
         <IlanBilgileri ilan={ilan} />
 
         {/* Kadro Kriter Ekleme */}
-        <KadroKriterEkle
-          ilanId={params.id}
-          basvuruSuresiBitti={basvuruSuresiBitti}
-        />
+        <KadroKriterEkle ilanId={id} basvuruSuresiBitti={basvuruSuresiBitti} />
 
         {/* Jüri Atama */}
-        <JuriAtama ilanId={params.id} />
+        <JuriAtama ilanId={id} />
 
         {/* Başvuru Listesi */}
-        <BasvuruListesi basvurular={basvurular} />
-
-        {/* Değerlendirme ve Nihai Karar */}
-        {basvuruSuresiBitti && (
-          <div className="bg-white shadow p-6 rounded-lg space-y-4">
-            <h2 className="text-2xl font-bold mb-4">
-              <Degerlendirme ilanId={params.id} />
-            </h2>
-            <p>
-              <NihaiKarar ilanId={params.id} />
-            </p>
-          </div>
-        )}
+        <BasvuruListesi
+          basvurular={basvurular}
+          bitisTarihi={ilan.bitis}
+          kontenjan={ilan.kontenjan}
+        />
       </div>
     </YoneticiPage>
   );

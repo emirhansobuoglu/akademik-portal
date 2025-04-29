@@ -71,5 +71,31 @@ router.get("/ilan/:ilanId", async (req, res) => {
     res.status(500).json({ error: "İlan başvuruları getirilemedi" });
   }
 });
+// backend/routes/basvuruRoutes.js
+router.patch("/kazanani-sec", async (req, res) => {
+  await connectDB();
+
+  const { selectedIds } = req.body;
+
+  if (!selectedIds || !Array.isArray(selectedIds)) {
+    return res.status(400).json({ error: "Seçilen başvuru listesi eksik." });
+  }
+
+  try {
+    // Önce hepsini Reddedildi yap
+    await Basvuru.updateMany({}, { durum: "Reddedildi" });
+
+    // Seçilenleri Onaylandı yap
+    await Basvuru.updateMany(
+      { _id: { $in: selectedIds } },
+      { durum: "Onaylandı" }
+    );
+
+    res.status(200).json({ message: "Başvurular başarıyla güncellendi." });
+  } catch (error) {
+    console.error("🔥 Kazananı seçme hatası:", error);
+    res.status(500).json({ error: "Başvurular güncellenemedi." });
+  }
+});
 
 export default router;

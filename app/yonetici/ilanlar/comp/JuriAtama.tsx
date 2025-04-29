@@ -139,7 +139,6 @@ const JuriAtama: React.FC<JuriAtamaProps> = ({ ilanId }) => {
   return (
     <div className="bg-white shadow p-6 rounded-lg space-y-4 mb-8">
       <h2 className="text-2xl font-bold mb-4">Jüri Atama</h2>
-      {ilanId}
 
       <div className="flex items-center gap-4 mb-4">
         <input
