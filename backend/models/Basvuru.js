@@ -2,11 +2,20 @@
 import mongoose from "mongoose";
 
 const BasvuruSchema = new mongoose.Schema({
-    ilanId: { type: mongoose.Schema.Types.ObjectId, ref: "Ilan", required: true },
-    adayAd: { type: String, required: true },
-    belgeler: { type: [String], default: [] },
-    aciklama: { type: String, default: "" },
-    durum: { type: String, enum: ["Beklemede", "Onaylandı", "Reddedildi"], default: "Beklemede" },
+  ilanId: { type: mongoose.Schema.Types.ObjectId, ref: "Ilan", required: true },
+  adayAd: { type: String, required: true },
+  belgeler: { type: [String], default: [] },
+  aciklama: { type: String, default: "" },
+  durum: {
+    type: String,
+    enum: ["Beklemede", "Onaylandı", "Reddedildi"],
+    default: "Beklemede",
+  },
+  kazananMi: {
+    type: Boolean,
+    default: false,
+  },
 });
 
-export default mongoose.models.Basvuru || mongoose.model("Basvuru", BasvuruSchema);
+export default mongoose.models.Basvuru ||
+  mongoose.model("Basvuru", BasvuruSchema);
