@@ -1,10 +1,13 @@
-// app/utils/firebaseUpload.ts
-import { getDownloadURL, ref, uploadBytes } from "firebase/storage";
-import { storage } from "../firebase/config";
+import { app } from "@/app/firebase/config";
+import { getDownloadURL, getStorage, ref, uploadBytes } from "firebase/storage";
 
-export const uploadFileToFirebase = async (file: File, folder: string) => {
-    const fileRef = ref(storage, `${folder}/${file.name}`);
-    const snapshot = await uploadBytes(fileRef, file);
-    const url = await getDownloadURL(snapshot.ref);
-    return url;
+const storage = getStorage(app);
+
+const uploadFileToFirebase = async (file: File) => {
+    const storageRef = ref(storage, `uploads/${Date.now()}-${file.name}`);
+    await uploadBytes(storageRef, file);
+    const downloadURL = await getDownloadURL(storageRef);
+    return downloadURL;
 };
+
+export default uploadFileToFirebase;

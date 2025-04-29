@@ -26,6 +26,18 @@ router.get("/:id", async (req, res) => {
         res.status(500).json({ error: "İlan getirilemedi" });
     }
 });
+// ID ile ilan sil
+router.delete("/:id", async (req, res) => {
+    const { id } = req.params;
+    try {
+        const ilan = await Ilan.findByIdAndDelete(id);
+        if (!ilan) return res.status(404).json({ error: "İlan bulunamadı" });
+        res.status(200).json({ message: "İlan başarıyla silindi" });
+    } catch (error) {
+        console.error("🔥 İlan Silme Hatası:", error);
+        res.status(500).json({ error: "İlan silinemedi" });
+    }
+});
 
 // 🔥 Yeni ilan ekle
 router.post("/", async (req, res) => {

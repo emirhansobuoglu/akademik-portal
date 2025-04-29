@@ -30,18 +30,13 @@ const AdayIlanlarPage = () => {
         const ilanData = await ilanRes.json();
         setIlanlar(ilanData);
 
-        // Her ilan için kriter verisi çek
         const kriterMap: Record<string, string> = {};
         for (const ilan of ilanData) {
-          const kriterRes = await fetch(
-            `http://localhost:5000/backend-api/kriterler?ilanId=${ilan._id}`
-          );
+          const kriterRes = await fetch(`http://localhost:5000/backend-api/kriterler?ilanId=${ilan._id}`);
           const kriterData = await kriterRes.json();
-          if (Array.isArray(kriterData) && kriterData.length > 0) {
-            kriterMap[ilan._id] = kriterData.map((k) => k.aciklama).join(", ");
-          } else {
-            kriterMap[ilan._id] = "-";
-          }
+          kriterMap[ilan._id] = Array.isArray(kriterData) && kriterData.length > 0
+            ? kriterData.map((k) => k.aciklama).join(", ")
+            : "-";
         }
 
         setKadroKriterleri(kriterMap);
@@ -53,9 +48,13 @@ const AdayIlanlarPage = () => {
     fetchData();
   }, []);
 
-
   const handleBasvur = async (ilanId: string) => {
+    console.log("handleBasvur çağrıldı:", ilanId);
+
     const basvuranAd = localStorage.getItem("name");
+    console.log("Aday adı:", basvuranAd);
+    console.log("Seçilen ilan:", selectedIlan);
+    console.log("CV dosyası:", cvFile);
 
     if (!basvuranAd || !selectedIlan || !cvFile) {
       alert("Lütfen gerekli bilgileri ve dosyaları giriniz!");
@@ -64,10 +63,12 @@ const AdayIlanlarPage = () => {
 
     try {
       const cvUrl = await uploadFileToFirebase(cvFile);
-      let ekDosyaUrl = "";
+      console.log("CV Firebase URL:", cvUrl);
 
+      let ekDosyaUrl = "";
       if (ekDosya) {
         ekDosyaUrl = await uploadFileToFirebase(ekDosya);
+        console.log("Ek Dosya Firebase URL:", ekDosyaUrl);
       }
 
       const body = {
@@ -75,8 +76,13 @@ const AdayIlanlarPage = () => {
         ilanId,
         durum: "Beklemede",
         belgeler: [cvUrl, ekDosyaUrl].filter(Boolean),
+        cv: cvUrl,
+        ekDosya: ekDosyaUrl || "",
+        ekAciklama,
         aciklama: ekAciklama,
       };
+
+      console.log("Başvuru POST verisi:", body);
 
       const res = await fetch("http://localhost:5000/backend-api/basvurular", {
         method: "POST",
@@ -92,13 +98,15 @@ const AdayIlanlarPage = () => {
         setSelectedIlan(null);
       } else {
         const data = await res.json();
+        console.log("Sunucu cevabı (başarısız):", data);
         alert(`❌ Başvuru başarısız oldu: ${data.error || "Bilinmeyen hata"}`);
       }
     } catch (error) {
-      console.error("Başvuru hatası:", error);
+      console.error("❌ Başvuru sırasında beklenmeyen hata:", error);
       alert("❌ Başvuru sırasında hata oluştu.");
     }
   };
+
 
   return (
     <div className="p-8">

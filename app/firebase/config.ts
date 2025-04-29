@@ -1,16 +1,16 @@
-// app/firebase/config.ts
-import { initializeApp } from "firebase/app";
-import { getStorage } from "firebase/storage";
+import { getApp, getApps, initializeApp } from "firebase/app";
 
 const firebaseConfig = {
-    apiKey: "YOUR_API_KEY",
-    authDomain: "YOUR_AUTH_DOMAIN",
-    projectId: "YOUR_PROJECT_ID",
-    storageBucket: "YOUR_BUCKET_NAME.appspot.com",
-    messagingSenderId: "YOUR_SENDER_ID",
-    appId: "YOUR_APP_ID",
+    apiKey: "AIzaSyC8fR-AU0sULBJt2RYz0pxbMnwUgoETsRQ",
+    authDomain: "akademikportal-d3811.firebaseapp.com",
+    projectId: "akademikportal-d3811",
+    storageBucket: "akademikportal-d3811.firebasestorage.app",
+    messagingSenderId: "77140793201",
+    appId: "1:77140793201:web:3827bfbe736ca944ad88d0"
 };
 
-const firebaseApp = initializeApp(firebaseConfig);
-const storage = getStorage(firebaseApp);
-export { storage };
+// ✅ Uygulama daha önce başlatılmadıysa başlat, yoksa mevcut olanı al
+const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApp();
+
+export { app };
+

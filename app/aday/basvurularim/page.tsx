@@ -37,7 +37,6 @@ export default function BasvurularimPage() {
         const basvurularData = await res.json();
         setBasvurular(basvurularData);
 
-        // İlan bilgilerini al
         const ilanPromises = basvurularData.map((b: Basvuru) =>
           fetch(`http://localhost:5000/backend-api/ilanlar/${b.ilanId}`)
             .then((r) => r.json())
