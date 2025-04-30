@@ -1,4 +1,5 @@
 import JuriSidebar from "../components/sidebar/jurisidebar";
+import ClientRoleGuard from "../utils/ClientRoleGuard";
 
 export default function JuriLayout({
   children,
@@ -6,9 +7,11 @@ export default function JuriLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <div className="flex min-h-screen">
-      <JuriSidebar />
-      <div className="flex-1 p-6 bg-gray-50 overflow-auto">{children}</div>
-    </div>
+    <ClientRoleGuard allowedRoles={["juri"]}>
+      <div className="flex min-h-screen">
+        <JuriSidebar />
+        <div className="flex-1 p-6 bg-gray-50 overflow-auto">{children}</div>
+      </div>
+    </ClientRoleGuard>
   );
 }
