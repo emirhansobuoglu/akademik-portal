@@ -1,4 +1,5 @@
 import express from "express";
+import Ilan from "../models/Ilan.js";
 import Juri from "../models/JuriAtama.js";
 
 const router = express.Router();
@@ -53,5 +54,29 @@ router.delete("/", async (req, res) => {
     res.status(500).json({ error: "Jüri silinemedi" });
   }
 });
+// Belirli jüriye (tcNo) atanmış ilanları getir
+router.get("/tc/:tcNo", async (req, res) => {
+  const { tcNo } = req.params;
 
+  if (!tcNo) {
+    return res.status(400).json({ error: "TC kimlik numarası gerekli" });
+  }
+
+  try {
+    const atamalar = await Juri.find({ tcNo });
+
+    if (atamalar.length === 0) {
+      return res.status(404).json({ error: "Jüriye ait atama bulunamadı" });
+    }
+
+    const ilanIdListesi = atamalar.map((j) => j.ilanId);
+
+    const ilanlar = await Ilan.find({ _id: { $in: ilanIdListesi } });
+
+    res.status(200).json(ilanlar);
+  } catch (error) {
+    console.error("🔥 TC ile ilan getirme hatası:", error);
+    res.status(500).json({ error: "İlanlar getirilemedi" });
+  }
+});
 export default router;

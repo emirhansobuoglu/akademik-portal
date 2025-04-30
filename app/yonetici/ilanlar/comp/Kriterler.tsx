@@ -50,7 +50,6 @@ const KadroKriterEkle: React.FC<KadroKriterEkleProps> = ({
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ ilanId, aciklama, maxPuan }),
-        // kategori dummy gönderiyoruz çünkü backend şeması istiyor olabilir şimdilik
       });
 
       if (res.ok) {
@@ -88,42 +87,36 @@ const KadroKriterEkle: React.FC<KadroKriterEkleProps> = ({
     }
   };
 
-  if (basvuruSuresiBitti) {
-    return (
-      <div className="p-6 bg-gray-100 rounded-lg">
-        Başvuru süresi bittiği için yeni kriter eklenemez.
-      </div>
-    );
-  }
-
   return (
     <div className="bg-white shadow p-6 rounded-lg space-y-6 mb-8">
       <h2 className="text-2xl font-bold mb-4">Kadro Kriterleri</h2>
 
       {/* Kriter Ekleme Alanı */}
-      <div className="flex flex-col md:flex-row gap-4">
-        <input
-          type="text"
-          placeholder="Açıklama"
-          value={aciklama}
-          onChange={(e) => setAciklama(e.target.value)}
-          className="border p-2 rounded flex-1"
-        />
-        <input
-          type="number"
-          placeholder="Maksimum Puan"
-          value={maxPuan}
-          onChange={(e) => setMaxPuan(parseInt(e.target.value))}
-          className="border p-2 rounded w-40"
-        />
-        <button
-          onClick={handleEkle}
-          disabled={loading}
-          className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded"
-        >
-          {loading ? "Ekleniyor..." : "Ekle"}
-        </button>
-      </div>
+      {!basvuruSuresiBitti && (
+        <div className="flex flex-col md:flex-row gap-4">
+          <input
+            type="text"
+            placeholder="Açıklama"
+            value={aciklama}
+            onChange={(e) => setAciklama(e.target.value)}
+            className="border p-2 rounded flex-1"
+          />
+          <input
+            type="number"
+            placeholder="Maksimum Puan"
+            value={maxPuan}
+            onChange={(e) => setMaxPuan(parseInt(e.target.value))}
+            className="border p-2 rounded w-40"
+          />
+          <button
+            onClick={handleEkle}
+            disabled={loading}
+            className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded"
+          >
+            {loading ? "Ekleniyor..." : "Ekle"}
+          </button>
+        </div>
+      )}
 
       {/* Eklenen Kriterler Tablosu */}
       {kriterler.length > 0 && (

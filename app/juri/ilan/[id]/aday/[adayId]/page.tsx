@@ -1,48 +1,99 @@
 "use client";
 
 import PdfModal from "@/app/components/modal/PdfModal";
-import { useParams } from "next/navigation";
-import { useState } from "react";
+import { Basvuru } from "@/app/types/basvuru";
+import { useParams, useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
 
-const dummyBelgeler = [
-  { id: "1", ad: "Özgeçmiş", url: "/belgeler/ozgecmis.pdf" },
-  { id: "2", ad: "Diploma", url: "/belgeler/diploma.pdf" },
-];
-
-const dummyKriterler = [
-  { id: "1", ad: "Bilimsel Yayınlar" },
-  { id: "2", ad: "Proje Yürütücülüğü" },
-  { id: "3", ad: "Patent" },
-];
-
-const dummyAciklama = `
-- SCI Expanded dergilerinde 2 makalem yayımlandı.
-- TÜBİTAK destekli 1 proje yürüttüm.
-- Uluslararası bir konferansta bildiri sundum.
-`;
+interface Kriter {
+  _id: string;
+  aciklama: string;
+  maxPuan: number;
+}
 
 const AdayDegerlendirmePage = () => {
+  const router = useRouter();
   const params = useParams() as { id: string; adayId: string };
   const { id, adayId } = params;
 
+  const [basvuru, setBasvuru] = useState<Basvuru | null>(null);
+  const [kriterler, setKriterler] = useState<Kriter[]>([]);
   const [puanlar, setPuanlar] = useState<{ [kriterId: string]: number }>({});
   const [rapor, setRapor] = useState("");
   const [sonuc, setSonuc] = useState<"Onaylı" | "Reddedildi" | null>(null);
   const [openModalUrl, setOpenModalUrl] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
 
-  const handleSave = () => {
-    const degerlendirmeSonucu = {
-      ilanId: id,
-      adayId: adayId,
-      puanlar,
-      rapor,
-      sonuc,
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        // Başvuru bilgisi çek
+        const basvuruRes = await fetch(
+          `http://localhost:5000/backend-api/basvurular/${adayId}`
+        );
+        const basvuruData = await basvuruRes.json();
+        setBasvuru(basvuruData);
+
+        // Kadro kriterleri çek
+        const kriterRes = await fetch(
+          `http://localhost:5000/backend-api/kriterler?ilanId=${id}`
+        );
+        const kriterData = await kriterRes.json();
+        setKriterler(kriterData);
+      } catch (error) {
+        console.error("Veriler getirilemedi:", error);
+      } finally {
+        setLoading(false);
+      }
     };
 
-    console.log("Kaydedilecek Değerlendirme:", degerlendirmeSonucu);
+    if (id && adayId) fetchData();
+  }, [id, adayId]);
 
-    // Burada ileride backend API'ye POST yapılacak
+  const handleSave = async () => {
+    if (!sonuc) {
+      alert("Lütfen Onayla veya Reddet seçeneğini işaretleyin.");
+      return;
+    }
+
+    const degerlendirmeSonucu = {
+      juriTc: localStorage.getItem("tcNo"),
+      basvuruId: adayId,
+      puanlar,
+      rapor,
+      sonuc: sonuc.toLowerCase(),
+    };
+
+    try {
+      const res = await fetch(
+        "http://localhost:5000/backend-api/degerlendirme",
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(degerlendirmeSonucu),
+        }
+      );
+
+      if (res.ok) {
+        alert("✅ Değerlendirme kaydedildi!");
+        router.push(`/juri/ilan/${id}`); // ✅ İlgili ilana geri dön
+      } else {
+        const data = await res.json();
+        alert(`❌ Hata: ${data.error}`);
+      }
+    } catch (error) {
+      console.error(error);
+      alert("❌ Değerlendirme kaydedilirken hata oluştu.");
+    }
   };
+
+  if (loading) {
+    return <div className="p-6">Yükleniyor...</div>;
+  }
+
+  if (!basvuru) {
+    return <div className="p-6">Aday bilgisi bulunamadı.</div>;
+  }
 
   return (
     <div className="p-6 space-y-10">
@@ -52,13 +103,10 @@ const AdayDegerlendirmePage = () => {
       <div className="bg-white p-6 rounded-lg shadow space-y-2">
         <h2 className="text-xl font-semibold mb-4">Aday Bilgileri</h2>
         <p>
-          <span className="font-semibold">Aday TC:</span> {adayId}
+          <span className="font-semibold">Ad Soyad:</span> {basvuru.adayAd}
         </p>
         <p>
-          <span className="font-semibold">Aday İsim:</span> Emirhan Söbüoğlu
-        </p>
-        <p>
-          <span className="font-semibold">Aday TC:</span> {adayId}
+          <span className="font-semibold">Açıklama:</span> {basvuru.aciklama}
         </p>
         <p>
           <span className="font-semibold">İlan ID:</span> {id}
@@ -69,20 +117,23 @@ const AdayDegerlendirmePage = () => {
       <div className="bg-white p-6 rounded-lg shadow space-y-6">
         <h2 className="text-xl font-semibold mb-4">Başvuru Belgeleri</h2>
 
-        <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-          {dummyBelgeler.map((belge) => (
-            <div
-              key={belge.id}
-              onClick={() => setOpenModalUrl(belge.url)}
-              className="bg-gray-100 p-4 rounded flex flex-col items-center justify-center text-center cursor-pointer hover:bg-gray-200"
-            >
-              <p className="font-medium mb-2 truncate">{belge.ad}</p>
-              <span className="text-blue-600 text-sm">Görüntüle</span>
-            </div>
-          ))}
-        </div>
+        {/* <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+          {basvuru.belgeler?.length > 0 ? (
+            basvuru.belgeler.map((belge, index) => (
+              <div
+                key={index}
+                onClick={() => setOpenModalUrl(belge.ad)}
+                className="bg-gray-100 p-4 rounded flex flex-col items-center justify-center text-center cursor-pointer hover:bg-gray-200"
+              >
+                <p className="font-medium mb-2 truncate">{belge.ad}</p>
+                <span className="text-blue-600 text-sm">Görüntüle</span>
+              </div>
+            ))
+          ) : (
+            <p>Belge bulunamadı.</p>
+          )}
+        </div> */}
 
-        {/* Pdf Modal */}
         {openModalUrl && (
           <PdfModal
             isOpen={true}
@@ -95,7 +146,9 @@ const AdayDegerlendirmePage = () => {
       {/* Adayın Açıklaması */}
       <div className="bg-white p-6 rounded-lg shadow space-y-4">
         <h2 className="text-xl font-semibold mb-4">Adayın Açıklaması</h2>
-        <p className="text-gray-700 whitespace-pre-line">{dummyAciklama}</p>
+        <p className="text-gray-700 whitespace-pre-line">
+          {basvuru.aciklama || "Açıklama yok."}
+        </p>
       </div>
 
       {/* Kadro Kriterleri */}
@@ -104,17 +157,19 @@ const AdayDegerlendirmePage = () => {
           Kadro Kriterlerine Göre Puanlama
         </h2>
 
-        {dummyKriterler.map((kriter) => (
-          <div key={kriter.id} className="flex items-center gap-4">
-            <label className="w-64 font-medium">{kriter.ad}</label>
+        {kriterler.map((kriter) => (
+          <div key={kriter._id} className="flex items-center gap-4">
+            <label className="w-64 font-medium">{kriter.aciklama}</label>
             <input
               type="number"
-              value={puanlar[kriter.id] || ""}
+              value={puanlar[kriter._id] || ""}
               onChange={(e) =>
-                setPuanlar({ ...puanlar, [kriter.id]: Number(e.target.value) })
+                setPuanlar({ ...puanlar, [kriter._id]: Number(e.target.value) })
               }
               className="border p-2 rounded w-32"
-              placeholder="Puan"
+              placeholder={`0 - ${kriter.maxPuan}`}
+              min={0}
+              max={kriter.maxPuan}
             />
           </div>
         ))}

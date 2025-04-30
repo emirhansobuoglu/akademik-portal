@@ -4,5 +4,6 @@ export interface Ilan {
   kadro: string;
   baslangic: string;
   bitis: string;
-  aciklama: string;
+  kosullar: string;
+  kontenjan: string;
 }

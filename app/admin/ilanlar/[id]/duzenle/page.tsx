@@ -3,7 +3,6 @@
 import { useParams } from "next/navigation";
 import { useEffect, useState } from "react";
 
-// Tipler
 interface Ilan {
   _id: string;
   baslik: string;
@@ -12,6 +11,14 @@ interface Ilan {
   bitis: string;
   belgeler: string[];
   kosullar: string;
+  kontenjan: number;
+}
+
+// ✅ Kadro Kriteri tipi
+interface Kriter {
+  _id?: string;
+  aciklama: string;
+  maxPuan?: number;
 }
 
 const IlanDuzenlePage = () => {
@@ -23,7 +30,10 @@ const IlanDuzenlePage = () => {
     bitis: "",
     belgeler: [""],
     kosullar: "",
+    kontenjan: 1,
   });
+
+  const [kadroKriterleri, setKadroKriterleri] = useState<Kriter[]>([]); // ✅
 
   useEffect(() => {
     const fetchIlan = async () => {
@@ -38,13 +48,28 @@ const IlanDuzenlePage = () => {
           bitis: data.bitis?.slice(0, 10),
           belgeler: data.belgeler || [""],
           kosullar: data.kosullar || "",
+          kontenjan: data.kontenjan || 1,
         });
       } catch (error) {
         console.error("İlan verisi çekilemedi", error);
       }
     };
 
+    const fetchKriterler = async () => {
+      if (!id) return;
+      try {
+        const res = await fetch(`http://localhost:5000/backend-api/kriterler?ilanId=${id}`);
+        const data = await res.json();
+        if (Array.isArray(data)) {
+          setKadroKriterleri(data);
+        }
+      } catch (error) {
+        console.error("Kadro kriterleri alınamadı", error);
+      }
+    };
+
     fetchIlan();
+    fetchKriterler();
   }, [id]);
 
   const handleGuncelle = async () => {
@@ -56,11 +81,29 @@ const IlanDuzenlePage = () => {
         },
         body: JSON.stringify(form),
       });
-      if (res.ok) {
-        alert("✅ İlan başarıyla güncellendi!");
-      } else {
+
+      if (!res.ok) {
         alert("❌ Güncelleme başarısız!");
+        return;
       }
+
+      // ✅ Kadro kriterlerini yeniden gönder (var olanları güncellemeden basit çözüm)
+      for (const kriter of kadroKriterleri) {
+        if (kriter.aciklama.trim() === "") continue;
+        await fetch("http://localhost:5000/backend-api/kriterler", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            ilanId: id,
+            aciklama: kriter.aciklama,
+            maxPuan: 100,
+          }),
+        });
+      }
+
+      alert("✅ İlan ve kriterler başarıyla güncellendi!");
     } catch (error) {
       console.error("Güncelleme hatası", error);
     }
@@ -74,6 +117,16 @@ const IlanDuzenlePage = () => {
     const yeniBelgeler = [...form.belgeler];
     yeniBelgeler[index] = value;
     setForm({ ...form, belgeler: yeniBelgeler });
+  };
+
+  const kriterEkle = () => {
+    setKadroKriterleri([...kadroKriterleri, { aciklama: "" }]);
+  };
+
+  const kriterDegistir = (index: number, value: string) => {
+    const yeni = [...kadroKriterleri];
+    yeni[index].aciklama = value;
+    setKadroKriterleri(yeni);
   };
 
   return (
@@ -104,7 +157,6 @@ const IlanDuzenlePage = () => {
             onChange={(e) => setForm({ ...form, baslangic: e.target.value })}
             className="border p-2 w-full"
           />
-
           <input
             type="date"
             value={form.bitis}
@@ -112,6 +164,15 @@ const IlanDuzenlePage = () => {
             className="border p-2 w-full"
           />
         </div>
+
+        <input
+          type="number"
+          value={form.kontenjan}
+          onChange={(e) => setForm({ ...form, kontenjan: parseInt(e.target.value) })}
+          placeholder="Kontenjan (örnek: 2)"
+          className="border p-2 w-full"
+          min={1}
+        />
 
         <div className="space-y-2">
           <h2 className="font-semibold">Gerekli Belgeler</h2>
@@ -141,6 +202,27 @@ const IlanDuzenlePage = () => {
             placeholder="Başvuru koşullarını buraya yazın"
             className="border p-2 w-full h-24"
           ></textarea>
+        </div>
+
+        {/* ✅ Kadro Kriterleri */}
+        <div className="space-y-2">
+          <h2 className="font-semibold">Kadro Kriterleri</h2>
+          {kadroKriterleri.map((kriter, index) => (
+            <input
+              key={index}
+              type="text"
+              value={kriter.aciklama}
+              onChange={(e) => kriterDegistir(index, e.target.value)}
+              placeholder={`Kriter ${index + 1}`}
+              className="border p-2 w-full"
+            />
+          ))}
+          <button
+            onClick={kriterEkle}
+            className="bg-purple-600 text-white px-4 py-2 rounded"
+          >
+            ➕ Kriter Ekle
+          </button>
         </div>
 
         <button

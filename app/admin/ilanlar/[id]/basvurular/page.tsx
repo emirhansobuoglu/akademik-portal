@@ -1,5 +1,6 @@
 "use client";
 
+import PdfModal from "@/app/components/modal/PdfModal";
 import { useParams } from "next/navigation";
 import { useEffect, useState } from "react";
 
@@ -8,11 +9,16 @@ interface Basvuru {
   adayAd: string;
   belgeler: string[];
   durum: string;
+  aciklama?: string;
+  cv?: string;
+  ekDosya?: string;
+  ekAciklama?: string;
 }
 
 const BasvurularPage = () => {
   const { id } = useParams();
   const [basvurular, setBasvurular] = useState<Basvuru[]>([]);
+  const [selectedPdfUrl, setSelectedPdfUrl] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchBasvurular = async () => {
@@ -60,8 +66,10 @@ const BasvurularPage = () => {
           <thead className="bg-gray-100 text-left">
             <tr>
               <th className="p-2">Aday Adı</th>
-              <th className="p-2">Belgeler</th>
               <th className="p-2">Durum</th>
+              <th className="p-2">Açıklama</th>
+              <th className="p-2">CV</th>
+              <th className="p-2">Ek Dosya</th>
               <th className="p-2">İşlem</th>
             </tr>
           </thead>
@@ -69,14 +77,53 @@ const BasvurularPage = () => {
             {basvurular.map((b) => (
               <tr key={b._id} className="border-t">
                 <td className="p-2">{b.adayAd}</td>
-                <td className="p-2">
-                  <ul className="list-disc ml-4">
-                    {b.belgeler.map((belge, i) => (
-                      <li key={i}>{belge}</li>
-                    ))}
-                  </ul>
+                <td className="p-2 font-semibold text-sm">
+                  <span
+                    className={`${b.durum === "Beklemede"
+                        ? "text-yellow-500"
+                        : b.durum === "Onaylandı"
+                          ? "text-green-600"
+                          : b.durum === "Reddedildi"
+                            ? "text-red-600"
+                            : "text-blue-600"
+                      }`}
+                  >
+                    {b.durum}
+                  </span>
                 </td>
-                <td className="p-2">{b.durum}</td>
+                <td className="p-2 text-gray-600 text-sm">{b.aciklama || "-"}</td>
+
+                <td className="p-2">
+                  {b.cv ? (
+                    <button
+                      className="text-blue-600 underline"
+                      onClick={() => setSelectedPdfUrl(b.cv!)}
+                    >
+                      CV'yi Aç
+                    </button>
+                  ) : (
+                    "-"
+                  )}
+                </td>
+
+                <td className="p-2">
+                  {b.ekDosya ? (
+                    <div className="flex flex-col">
+                      <button
+                        className="text-blue-600 underline"
+                        onClick={() => setSelectedPdfUrl(b.ekDosya!)}
+                      >
+                        Ek Dosya
+                      </button>
+                      {b.ekAciklama && (
+                        <span className="text-xs text-gray-500 mt-1">{b.ekAciklama}</span>
+                      )}
+                    </div>
+                  ) : (
+                    "-"
+                  )}
+                </td>
+
                 <td className="p-2">
                   {b.durum !== "Yetkiliye Yönlendirildi" && (
                     <button
@@ -92,6 +139,13 @@ const BasvurularPage = () => {
           </tbody>
         </table>
       )}
+
+      {/* ✅ PDF MODAL */}
+      <PdfModal
+        isOpen={selectedPdfUrl !== null}
+        pdfUrl={selectedPdfUrl || ""}
+        onClose={() => setSelectedPdfUrl(null)}
+      />
     </div>
   );
 };

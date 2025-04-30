@@ -7,6 +7,7 @@ import mongoose from "mongoose";
 import authRoutes from "./routes/authRoutes.js";
 import basvuruRoutes from "./routes/basvuruRoutes.js";
 import ilanRoutes from "./routes/ilanRoutes.js";
+import juriDegerlendirmeRoutes from "./routes/juridegerlendirmeRoutes.js";
 import juriRoutes from "./routes/juriRoutes.js";
 import kriterRoutes from "./routes/kriterRoutes.js";
 
@@ -32,6 +33,7 @@ app.use("/backend-api/basvurular", basvuruRoutes);
 app.use("/backend-api/ilanlar", ilanRoutes);
 app.use("/backend-api/kriterler", kriterRoutes);
 app.use("/backend-api/juriler", juriRoutes);
+app.use("/backend-api/degerlendirme", juriDegerlendirmeRoutes);
 
 // Test route
 app.get("/", (req, res) => {

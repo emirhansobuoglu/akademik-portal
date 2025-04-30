@@ -1,5 +1,6 @@
 "use client";
 
+import PdfModal from "@/app/components/modal/PdfModal";
 import { useEffect, useState } from "react";
 
 type Basvuru = {
@@ -22,6 +23,7 @@ type Ilan = {
 export default function BasvurularimPage() {
   const [basvurular, setBasvurular] = useState<Basvuru[]>([]);
   const [ilanlarMap, setIlanlarMap] = useState<Record<string, Ilan>>({});
+  const [selectedPdfUrl, setSelectedPdfUrl] = useState<string | null>(null); // ✅
 
   useEffect(() => {
     const fetchBasvurular = async () => {
@@ -85,12 +87,12 @@ export default function BasvurularimPage() {
                   <td className="p-2 font-semibold text-sm">
                     <span
                       className={`${b.durum === "Beklemede"
-                          ? "text-yellow-500"
-                          : b.durum === "Onaylandı"
-                            ? "text-green-600"
-                            : b.durum === "Reddedildi"
-                              ? "text-red-600"
-                              : "text-blue-600"
+                        ? "text-yellow-500"
+                        : b.durum === "Onaylandı"
+                          ? "text-green-600"
+                          : b.durum === "Reddedildi"
+                            ? "text-red-600"
+                            : "text-blue-600"
                         }`}
                     >
                       {b.durum}
@@ -101,9 +103,12 @@ export default function BasvurularimPage() {
                     <ul className="list-disc ml-4">
                       {b.belgeler.map((belge, i) => (
                         <li key={i}>
-                          <a href={belge} target="_blank" rel="noopener noreferrer" className="text-blue-600 underline">
+                          <button
+                            onClick={() => setSelectedPdfUrl(belge)}
+                            className="text-blue-600 underline"
+                          >
                             Belge {i + 1}
-                          </a>
+                          </button>
                         </li>
                       ))}
                     </ul>
@@ -114,6 +119,13 @@ export default function BasvurularimPage() {
           </tbody>
         </table>
       )}
+
+      {/* ✅ PdfModal */}
+      <PdfModal
+        isOpen={selectedPdfUrl !== null}
+        pdfUrl={selectedPdfUrl || ""}
+        onClose={() => setSelectedPdfUrl(null)}
+      />
     </div>
   );
 }
