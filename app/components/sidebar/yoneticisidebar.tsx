@@ -1,5 +1,6 @@
 "use client";
 
+import BildirimKutucugu from "@/app/yonetici/ilanlar/comp/BildirimKutucugu";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
@@ -48,6 +49,7 @@ const YonetSidebar = () => {
               </Link>
             );
           })}
+          <BildirimKutucugu />
         </nav>
       </div>
 

@@ -3,6 +3,7 @@
 import ModalIncele from "@/app/components/modal/BasvuruModal";
 import { Basvuru } from "@/app/types/basvuru";
 import { useEffect, useState } from "react";
+import { FaStar } from "react-icons/fa";
 
 interface BasvuruListesiProps {
   basvurular: Basvuru[];
@@ -76,6 +77,30 @@ const BasvuruListesi = ({
       alert("❌ Sunucu hatası!");
     }
   };
+  const handleKazananlariIptalEt = async () => {
+    if (!confirm("Kazananlar iptal edilecek. Emin misiniz?")) return;
+
+    try {
+      const res = await fetch(
+        "http://localhost:5000/backend-api/basvurular/kazananlari-iptal-et",
+        {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ ilanId: sortedBasvurular[0]?.ilanId }), // varsayım
+        }
+      );
+
+      if (res.ok) {
+        alert("Kazananlar başarıyla iptal edildi.");
+        window.location.reload();
+      } else {
+        alert("Bir hata oluştu.");
+      }
+    } catch (error) {
+      console.error("İptal hatası:", error);
+      alert("Sunucu hatası!");
+    }
+  };
 
   return (
     <>
@@ -108,7 +133,7 @@ const BasvuruListesi = ({
               <tr key={basvuru._id} className="border-t">
                 <td className="p-2 text-center">
                   {/* Sadece başvuru bitti ise ve kazananlar yoksa checkbox göster */}
-                  {basvuruBitti && kazananlar.length === 0 && (
+                  {basvuruBitti && kazananlar.length < kontenjanNumber && (
                     <input
                       type="checkbox"
                       key={index}
@@ -122,7 +147,16 @@ const BasvuruListesi = ({
                     />
                   )}
                 </td>
-                <td className="p-2">{basvuru.adayAd}</td>
+                <td className="p-2 flex items-center gap-1">
+                  {basvuru.durum === "Yetkiliye Yönlendirildi" && (
+                    <FaStar
+                      title="Admin tarafından yönlendirildi"
+                      className="text-yellow-500"
+                      size={14}
+                    />
+                  )}
+                  {basvuru.adayAd}
+                </td>
                 <td className="p-2">
                   <span
                     className={`inline-block px-3 py-1 text-white text-xs rounded ${getOnayBgColor(
@@ -146,28 +180,30 @@ const BasvuruListesi = ({
         </table>
 
         {/* Seçimi Onaylama Butonu */}
-        {basvuruBitti && kazananlar.length === 0 && selectedIds.length > 0 && (
-          <div className="pt-6 flex justify-end">
-            <button
-              onClick={handleSecimiOnayla}
-              className="bg-green-600 hover:bg-green-700 text-white px-6 py-2 rounded font-semibold"
-            >
-              Seçimi Onayla
-            </button>
-          </div>
-        )}
+        {basvuruBitti &&
+          kazananlar.length < kontenjanNumber &&
+          selectedIds.length > 0 && (
+            <div className="pt-6 flex justify-end">
+              <button
+                onClick={handleSecimiOnayla}
+                className="bg-green-600 hover:bg-green-700 text-white px-6 py-2 rounded font-semibold"
+              >
+                Seçimi Onayla
+              </button>
+            </div>
+          )}
 
         {/* Başvuru süresi bitmemişse info mesajı */}
-        {!basvuruBitti && (
-          <div className="pt-4 text-center text-sm text-red-600 font-semibold">
-            Başvuru süresi bitmeden seçim yapamazsınız.
-          </div>
-        )}
-
-        {/* Başvuru süresi bitti ama kazananlar seçilmişse info mesajı */}
-        {basvuruBitti && kazananlar.length > 0 && (
+        {basvuruBitti && kazananlar.length >= kontenjanNumber && (
           <div className="pt-4 text-center text-green-700 font-semibold">
-            Bu ilan için kazananlar zaten seçildi. Yeni seçim yapılamaz.
+            Bu ilan için kazanan kontenjanı doldu.
+            <br />
+            <button
+              onClick={handleKazananlariIptalEt}
+              className="mt-2 text-sm bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded"
+            >
+              Kazananları İptal Et
+            </button>
           </div>
         )}
       </div>

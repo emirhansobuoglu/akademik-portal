@@ -5,5 +5,5 @@ export interface Basvuru {
   belgeler: string[]; // boş dizi olabilir ama her zaman array
   aciklama: string;
   juriOnaySayisi: number;
-  durum: "Beklemede" | "Onaylandı" | "Reddedildi"; // enum gibi belirgin
+  durum: "Beklemede" | "Onaylandı" | "Reddedildi" | "Yetkiliye Yönlendirildi"; // enum gibi belirgin
 }

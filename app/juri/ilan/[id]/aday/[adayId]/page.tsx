@@ -101,54 +101,49 @@ const AdayDegerlendirmePage = () => {
 
       {/* Aday Bilgisi */}
       <div className="bg-white p-6 rounded-lg shadow space-y-2">
-        <h2 className="text-xl font-semibold mb-4">Aday Bilgileri</h2>
+        <h2 className="text-xl font-semibold mb-4">Aday</h2>
         <p>
           <span className="font-semibold">Ad Soyad:</span> {basvuru.adayAd}
         </p>
-        <p>
-          <span className="font-semibold">Açıklama:</span> {basvuru.aciklama}
-        </p>
-        <p>
-          <span className="font-semibold">İlan ID:</span> {id}
-        </p>
       </div>
 
-      {/* Başvuru Belgeleri */}
-      <div className="bg-white p-6 rounded-lg shadow space-y-6">
-        <h2 className="text-xl font-semibold mb-4">Başvuru Belgeleri</h2>
+      <div className="flex flex-col md:flex-row gap-6">
+        {/* Adayın Açıklaması */}
+        <div className="bg-white p-6 rounded-lg shadow space-y-4 w-full md:w-1/2">
+          <h2 className="text-xl font-semibold mb-4">Adayın Açıklaması</h2>
+          <p className="text-gray-700 whitespace-pre-line">
+            {basvuru.aciklama || "Açıklama yok."}
+          </p>
+        </div>
 
-        {/* <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-          {basvuru.belgeler?.length > 0 ? (
-            basvuru.belgeler.map((belge, index) => (
-              <div
-                key={index}
-                onClick={() => setOpenModalUrl(belge.ad)}
-                className="bg-gray-100 p-4 rounded flex flex-col items-center justify-center text-center cursor-pointer hover:bg-gray-200"
-              >
-                <p className="font-medium mb-2 truncate">{belge.ad}</p>
-                <span className="text-blue-600 text-sm">Görüntüle</span>
-              </div>
-            ))
-          ) : (
-            <p>Belge bulunamadı.</p>
+        {/* Başvuru Belgeleri */}
+        <div className="bg-white p-6 rounded-lg shadow space-y-6 w-full md:w-1/2">
+          <h2 className="text-xl font-semibold mb-4">Başvuru Belgeleri</h2>
+
+          <div className="grid grid-cols-1 gap-4">
+            {basvuru.belgeler?.length > 0 ? (
+              basvuru.belgeler.map((belge, index) => (
+                <div
+                  key={index}
+                  onClick={() => setOpenModalUrl(belge)}
+                  className="bg-gray-100 p-4 rounded flex flex-col items-center justify-center text-center cursor-pointer hover:bg-gray-200"
+                >
+                  <span className="text-blue-600 text-sm">Görüntüle</span>
+                </div>
+              ))
+            ) : (
+              <p>Belge bulunamadı.</p>
+            )}
+          </div>
+
+          {openModalUrl && (
+            <PdfModal
+              isOpen={true}
+              pdfUrl={openModalUrl}
+              onClose={() => setOpenModalUrl(null)}
+            />
           )}
-        </div> */}
-
-        {openModalUrl && (
-          <PdfModal
-            isOpen={true}
-            pdfUrl={openModalUrl}
-            onClose={() => setOpenModalUrl(null)}
-          />
-        )}
-      </div>
-
-      {/* Adayın Açıklaması */}
-      <div className="bg-white p-6 rounded-lg shadow space-y-4">
-        <h2 className="text-xl font-semibold mb-4">Adayın Açıklaması</h2>
-        <p className="text-gray-700 whitespace-pre-line">
-          {basvuru.aciklama || "Açıklama yok."}
-        </p>
+        </div>
       </div>
 
       {/* Kadro Kriterleri */}

@@ -121,10 +121,10 @@ const ModalIncele = ({ basvuru, onClose }: ModalInceleProps) => {
                   basvuru.belgeler.map((belge, idx) => (
                     <button
                       key={idx}
-                      onClick={() => setOpenPdfUrl(`/belgeler/${belge}`)}
-                      className="text-blue-600 hover:underline text-sm bg-gray-100 p-2 rounded"
+                      onClick={() => setOpenPdfUrl(`${belge}`)}
+                      className="text-blue-600 cursor-pointer hover:underline text-sm bg-gray-100 p-2 rounded"
                     >
-                      {belge}
+                      Görüntüle
                     </button>
                   ))
                 ) : (
