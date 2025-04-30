@@ -1,36 +1,82 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# 👨‍🏫 Akademik Personel Başvuru Sistemi
 
-## Getting Started
+Bu proje, üniversitelerdeki akademik personel alım süreçlerini dijital ortama taşıyan, modern web teknolojileriyle geliştirilmiş **rol tabanlı** bir başvuru ve değerlendirme sistemidir.
 
-First, run the development server:
+---
+
+## 🚀 Kullanılan Teknolojiler
+
+- **Frontend:** React.js
+- **Backend:** Node.js (Express)
+- **Veritabanı:** MongoDB
+- **Dosya Depolama:** Firebase Storage
+- **Kimlik Doğrulama:** JWT
+- **Rol Tabanlı Yönlendirme:** React Router + localStorage
+
+---
+
+## 👥 Kullanıcı Rolleri
+
+### 🧑 Aday
+- İlanları görüntüleyebilir
+- CV ve belgeleri yükleyerek başvuru yapabilir
+- Başvuru durumlarını takip edebilir
+
+### 🛠️ Admin (Sistem Yöneticisi)
+- İlan oluşturma, düzenleme ve silme
+- Başvuruları görüntüleme ve yöneticilere yönlendirme
+- Üye kaydı yapma
+
+### 🧑‍💼 Yönetici (Akademik Sorumlu)
+- İlanlar için jüri atayabilir, Kadro Kriteri ekleyebilir
+- Bildirim kutusundan başvuru süresi biten ilanları takip eder
+- Jüri değerlendirmelerini inceleyerek nihai kararı verir
+
+### 🧑‍⚖️ Jüri Üyesi
+- Sadece kendisine atanan ilanları görebilir
+- Adayları puanlayıp değerlendirme raporu yazar
+- Karar (Onay / Red) verir
+
+---
+
+## 🔐 Güvenlik ve Rol Yönlendirme
+
+- JWT ile kimlik doğrulama sağlanmaktadır
+- React `useEffect` + `router.replace()` ile kullanıcı rolu tespit edilerek yönlendirme yapılır
+- localStorage üzerinde oturum bilgisi tutulur
+
+| Rol        | Yönlendirme URL'si          |
+|------------|-----------------------------|
+| Admin      | `/admin`                    |
+| Aday       | `/aday`                     |
+| Yönetici   | `/yonetici`                 |
+| Jüri       | `/juri`                     |
+| Yetkisiz   | `/` (giriş sayfası)         |
+
+---
+
+## 📷 Ekran Görüntüleri
+
+
+![Ekran görüntüsü 2025-04-30 144636](https://github.com/user-attachments/assets/6498818f-5c81-4fae-a6de-92986eae152f)
+![Ekran görüntüsü 2025-04-30 144708](https://github.com/user-attachments/assets/2200d248-b392-4bd9-80fc-9a3155cb892e)
+![Ekran görüntüsü 2025-04-30 151229](https://github.com/user-attachments/assets/f360c4eb-4d18-4ab1-8886-32d7355b2cc5)
+![Ekran görüntüsü 2025-04-30 151210](https://github.com/user-attachments/assets/8e3d8730-3c2a-4951-b6f9-815134558148)
+![Ekran görüntüsü 2025-04-30 151308](https://github.com/user-attachments/assets/347455b2-325e-4d76-9abd-9f914866063c)
+![Ekran görüntüsü 2025-04-30 151021](https://github.com/user-attachments/assets/fddf1bbe-57f3-46bd-ae0a-53d089e11379)
+![Ekran görüntüsü 2025-04-30 151033](https://github.com/user-attachments/assets/8682378d-d35b-44d6-8b8a-31f45698d641)
+![Ekran görüntüsü 2025-04-30 150943](https://github.com/user-attachments/assets/0a91bf51-2b16-48ee-b647-caf16c8adeab)
+![Ekran görüntüsü 2025-04-30 150954](https://github.com/user-attachments/assets/87db9c65-9c2e-41ee-8d68-11f089213e21)
+
+---
+
+## 📁 Projeyi Çalıştırmak
 
 ```bash
+# 1. Bağımlılıkları yükle
+npm install
+
+# 2. Geliştirme sunucusunu başlat
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
-
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
-
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
-
-## Learn More
-
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+# 3. MongoDB bağlantı ayarlarını .env dosyasına gir
